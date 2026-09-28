@@ -82,6 +82,74 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
 }
 .chunky-btn.secondary:active { box-shadow: 0 0 0 #8a67bf; }
 
+/* ---------- Loading screen / flower spinner ---------- */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: radial-gradient(circle at 50% 40%, #fff2da 0%, #ffd9ec 45%, #d9c8f5 100%);
+  transition: opacity 0.5s ease;
+}
+#loading-screen.fade-out { opacity: 0; pointer-events: none; }
+.loading-text {
+  font-family: 'Baloo 2', 'Trebuchet MS', 'Comic Sans MS', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+
+.flower-spinner {
+  position: relative;
+  margin: 0 auto;
+  animation: flower-spin 1.8s linear infinite;
+}
+.flower-spinner.big { width: 110px; height: 110px; --fs-w: 20px; --fs-h: 42px; --fs-r: 32px; --fs-core: 30px; }
+.flower-spinner.small { width: 52px; height: 52px; --fs-w: 10px; --fs-h: 20px; --fs-r: 15px; --fs-core: 14px; margin-bottom: 10px; }
+
+.flower-spinner .petal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--fs-w);
+  height: var(--fs-h);
+  margin-left: calc(var(--fs-w) / -2);
+  margin-top: calc(var(--fs-h) / -2);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  border: 2px solid var(--ink);
+}
+.flower-spinner .petal:nth-child(1) { background: var(--pink); transform: rotate(0deg) translateY(calc(var(--fs-r) * -1)); }
+.flower-spinner .petal:nth-child(2) { background: var(--yellow); transform: rotate(45deg) translateY(calc(var(--fs-r) * -1)); }
+.flower-spinner .petal:nth-child(3) { background: var(--purple); transform: rotate(90deg) translateY(calc(var(--fs-r) * -1)); }
+.flower-spinner .petal:nth-child(4) { background: var(--green); transform: rotate(135deg) translateY(calc(var(--fs-r) * -1)); }
+.flower-spinner .petal:nth-child(5) { background: var(--pink-dark); transform: rotate(180deg) translateY(calc(var(--fs-r) * -1)); }
+.flower-spinner .petal:nth-child(6) { background: var(--yellow-dark); transform: rotate(225deg) translateY(calc(var(--fs-r) * -1)); }
+.flower-spinner .petal:nth-child(7) { background: var(--purple); transform: rotate(270deg) translateY(calc(var(--fs-r) * -1)); }
+.flower-spinner .petal:nth-child(8) { background: var(--green); transform: rotate(315deg) translateY(calc(var(--fs-r) * -1)); }
+
+.flower-spinner .core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--fs-core);
+  height: var(--fs-core);
+  margin-left: calc(var(--fs-core) / -2);
+  margin-top: calc(var(--fs-core) / -2);
+  border-radius: 50%;
+  background: var(--yellow-dark);
+  border: 3px solid var(--ink);
+  z-index: 2;
+}
+
+@keyframes flower-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ---------- Title screen ---------- */
 .overlay {
   position: fixed;
@@ -97,7 +165,6 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   text-align: center;
   max-width: 520px;
 }
-.title-hearts { font-size: 2.4rem; margin-bottom: 6px; }
 #title-heading { font-size: 1.9rem; margin: 0 0 10px; line-height: 1.25; }
 #title-subheading { font-size: 1.05rem; margin: 0 0 22px; opacity: 0.85; }
 .hint-text { font-size: 0.85rem; opacity: 0.6; margin-top: 18px; }

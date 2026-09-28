@@ -83,6 +83,7 @@ const HEART_TEX_GOLD = makeHeartTexture('#ffd166');
 const GLOW_TEX_GOLD = makeGlowTexture('rgba(255,224,140,0.95)', 'rgba(255,224,140,0)');
 const GLOW_TEX_PURPLE = makeGlowTexture('rgba(200,160,255,0.9)', 'rgba(200,160,255,0)');
 const GLOW_TEX_WHITE = makeGlowTexture('rgba(255,255,255,1)', 'rgba(255,255,255,0)');
+const GLOW_TEX_TEAL = makeGlowTexture('rgba(120,224,210,0.9)', 'rgba(120,224,210,0)');
 
 function addBaseLighting(scn, skyColor, groundColor) {
   scn.background = new THREE.Color(skyColor);
@@ -136,6 +137,194 @@ function makeFlower(x, z, color) {
   const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), toonMat(color));
   bloom.position.y = 0.55;
   group.add(stem, bloom);
+  group.position.set(x, 0, z);
+  return group;
+}
+
+function makeBush(x, z, hue = 0x4fae63) {
+  const group = new THREE.Group();
+  const mat = toonMat(hue);
+  const puffs = [[0, 0.35, 0, 0.5], [0.35, 0.22, 0.1, 0.4], [-0.35, 0.22, -0.1, 0.4], [0.1, 0.5, -0.25, 0.35]];
+  puffs.forEach(([px, py, pz, r]) => {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), mat);
+    puff.position.set(px, py, pz);
+    puff.castShadow = true;
+    addOutline(puff);
+    group.add(puff);
+  });
+  if (Math.random() < 0.6) {
+    const berryMat = toonMat(0xff6f91);
+    for (let i = 0; i < 3; i++) {
+      const berry = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), berryMat);
+      berry.position.set((Math.random() - 0.5) * 0.6, 0.3 + Math.random() * 0.3, (Math.random() - 0.5) * 0.6);
+      group.add(berry);
+    }
+  }
+  group.position.set(x, 0, z);
+  return group;
+}
+
+function makeCloud(x, y, z, scale = 1) {
+  const group = new THREE.Group();
+  const mat = toonMat(0xfffaf3);
+  const puffs = [[0, 0, 0, 0.6], [0.75, 0.08, 0.1, 0.48], [-0.75, 0.05, -0.1, 0.46], [0.3, 0.32, 0.15, 0.4], [-0.35, 0.3, -0.15, 0.38]];
+  puffs.forEach(([px, py, pz, r]) => {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), mat);
+    puff.position.set(px, py, pz);
+    group.add(puff);
+  });
+  group.position.set(x, y, z);
+  group.scale.setScalar(scale);
+  return group;
+}
+
+function makeBench(x, z, rotY = 0) {
+  const group = new THREE.Group();
+  const woodMat = toonMat(0x9a6a34);
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 0.55), woodMat);
+  seat.position.y = 0.5; seat.castShadow = true; addOutline(seat);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.55, 0.1), woodMat);
+  back.position.set(0, 0.82, -0.22); back.castShadow = true; addOutline(back);
+  group.add(seat, back);
+  const legGeo = new THREE.BoxGeometry(0.12, 0.5, 0.12);
+  [[-0.65, -0.18], [0.65, -0.18], [-0.65, 0.18], [0.65, 0.18]].forEach(([lx, lz]) => {
+    const leg = new THREE.Mesh(legGeo, woodMat);
+    leg.position.set(lx, 0.25, lz); leg.castShadow = true; addOutline(leg);
+    group.add(leg);
+  });
+  group.position.set(x, 0, z);
+  group.rotation.y = rotY;
+  return group;
+}
+
+function makeFenceAlongZ(x, zFrom, zTo, count) {
+  const group = new THREE.Group();
+  const mat = toonMat(0xf5efe0);
+  const step = (zTo - zFrom) / (count - 1);
+  for (let i = 0; i < count; i++) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.7, 0.12), mat);
+    post.position.set(x, 0.35, zFrom + step * i);
+    post.castShadow = true; addOutline(post);
+    group.add(post);
+  }
+  const railGeo = new THREE.BoxGeometry(0.08, 0.08, Math.abs(zTo - zFrom) + 0.2);
+  const rail1 = new THREE.Mesh(railGeo, mat);
+  rail1.position.set(x, 0.55, (zFrom + zTo) / 2);
+  addOutline(rail1);
+  const rail2 = new THREE.Mesh(railGeo, mat);
+  rail2.position.set(x, 0.22, (zFrom + zTo) / 2);
+  addOutline(rail2);
+  group.add(rail1, rail2);
+  return group;
+}
+
+function makeCrate(x, z) {
+  const crate = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), toonMat(0xb98a4b));
+  crate.position.set(x, 0.4, z);
+  crate.castShadow = true;
+  addOutline(crate);
+  return crate;
+}
+
+function makeBarrel(x, z) {
+  const group = new THREE.Group();
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 0.9, 10), toonMat(0x9a6a34));
+  barrel.position.y = 0.45; barrel.castShadow = true; addOutline(barrel);
+  const bandGeo = new THREE.TorusGeometry(0.41, 0.04, 6, 10);
+  const bandMat = toonMat(0x5b4326);
+  const band1 = new THREE.Mesh(bandGeo, bandMat); band1.rotation.x = Math.PI / 2; band1.position.y = 0.65;
+  const band2 = new THREE.Mesh(bandGeo, bandMat); band2.rotation.x = Math.PI / 2; band2.position.y = 0.25;
+  group.add(barrel, band1, band2);
+  group.position.set(x, 0, z);
+  return group;
+}
+
+function makeUmbrella(x, z, color) {
+  const group = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.0, 6), toonMat(0xf5efe0));
+  pole.position.y = 1.0; addOutline(pole);
+  const canopy = new THREE.Mesh(new THREE.ConeGeometry(1.1, 0.6, 8), toonMat(color));
+  canopy.position.y = 2.1; canopy.castShadow = true; addOutline(canopy);
+  group.add(pole, canopy);
+  group.position.set(x, 0, z);
+  return group;
+}
+
+function makeGem(x, y, z, color, glowTex) {
+  const group = new THREE.Group();
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.3, 0), toonMat(color));
+  gem.castShadow = true;
+  addOutline(gem);
+  const glow = makeSprite(glowTex, 1.0, 0.7);
+  group.add(gem, glow);
+  group.position.set(x, y, z);
+  group.userData.phase = Math.random() * Math.PI * 2;
+  return group;
+}
+
+function makeButterflyTexture(color) {
+  const c = document.createElement('canvas'); c.width = 64; c.height = 48;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.ellipse(20, 22, 16, 12, -0.35, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(44, 22, 16, 12, 0.35, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#2b2140';
+  ctx.fillRect(30, 8, 4, 32);
+  return new THREE.CanvasTexture(c);
+}
+
+function makeButterfly(color) {
+  const sprite = makeSprite(makeButterflyTexture(color), 0.55, 1);
+  sprite.userData.phase = Math.random() * Math.PI * 2;
+  return sprite;
+}
+
+function makePathStrip(color, zFrom, zTo, width = 2.6) {
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, Math.abs(zTo - zFrom)), toonMat(color));
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(0, 0.015, (zFrom + zTo) / 2);
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function makeTorch(x, y, z) {
+  const group = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 1.2, 6), toonMat(0x5b4326));
+  pole.position.y = 0.6; addOutline(pole);
+  const flameGlow = makeSprite(GLOW_TEX_GOLD, 1.1, 0.9);
+  flameGlow.position.y = 1.3;
+  group.add(pole, flameGlow);
+  group.position.set(x, y, z);
+  return { group, flameGlow };
+}
+
+function makeBanner(x, y, z, rotY, colorA, colorB) {
+  const group = new THREE.Group();
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.8), new THREE.MeshBasicMaterial({ color: colorA, side: THREE.DoubleSide }));
+  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.45), new THREE.MeshBasicMaterial({ color: colorB, side: THREE.DoubleSide }));
+  stripe.position.y = -0.55;
+  stripe.position.z = 0.001;
+  group.add(plane, stripe);
+  group.position.set(x, y, z);
+  group.rotation.y = rotY;
+  return group;
+}
+
+function makeTreasurePile(x, z) {
+  const group = new THREE.Group();
+  const coinMat = toonMat(0xffd166);
+  for (let i = 0; i < 8; i++) {
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 10), coinMat);
+    coin.position.set((Math.random() - 0.5) * 0.8, 0.05 + i * 0.045, (Math.random() - 0.5) * 0.8);
+    coin.rotation.x = Math.PI / 2;
+    coin.rotation.z = Math.random();
+    addOutline(coin);
+    group.add(coin);
+  }
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), toonMat(0xff6f91));
+  gem.position.y = 0.5;
+  addOutline(gem);
+  group.add(gem);
   group.position.set(x, 0, z);
   return group;
 }
@@ -593,9 +782,47 @@ function buildRoom1() {
   const scn = baseRoomShell('room1', 0xbfe3ff, 0x7bc47f);
   const obstacles = [];
   makeSun(scn);
+  scn.add(makePathStrip(0xd8c9a3, PORTAL_Z + 1, 11));
 
   const treeSpots = [[-10, -4], [10, -6], [-6, 8], [9, 9], [-11, 1], [12, 2]];
   treeSpots.forEach(([x, z]) => { scn.add(makeTree(x, z)); obstacles.push({ x, z, r: 1.1 }); });
+  const blossomSpots = [[-13, 6], [13, -7]];
+  blossomSpots.forEach(([x, z]) => { scn.add(makeTree(x, z, 0xffb3d1)); obstacles.push({ x, z, r: 1.1 }); });
+
+  const bushSpots = [[-4, 6], [4, 6], [-5, -6], [5, -7], [-9, 6], [9, -3]];
+  bushSpots.forEach(([x, z]) => { scn.add(makeBush(x, z)); obstacles.push({ x, z, r: 0.7 }); });
+
+  scn.add(makeFenceAlongZ(-3.2, 9, 3.5, 5));
+  scn.add(makeFenceAlongZ(3.2, 9, 3.5, 5));
+  scn.add(makeBench(-3.6, 6, Math.PI / 2));
+  obstacles.push({ x: -3.6, z: 6, r: 0.6 });
+
+  const lampSpots = [[-2.2, 3], [2.2, 3]];
+  lampSpots.forEach(([x, z]) => {
+    const torch = makeTorch(x, 0, z);
+    torch.group.scale.setScalar(1.4);
+    scn.add(torch.group);
+    obstacles.push({ x, z, r: 0.3 });
+  });
+
+  const clouds = [];
+  [[-14, 15, -6], [10, 17, -10], [-6, 16, 12], [14, 18, 6]].forEach(([x, y, z]) => {
+    const c = makeCloud(x, y, z, 1 + Math.random() * 0.5);
+    scn.add(c);
+    clouds.push(c);
+  });
+
+  const gems = [
+    makeGem(6, 0.6, 8, 0xffd166, GLOW_TEX_GOLD),
+    makeGem(-6, 0.6, -9, 0xffd166, GLOW_TEX_GOLD),
+  ];
+  gems.forEach(g => scn.add(g));
+
+  const butterflies = [makeButterfly('#ff6f91'), makeButterfly('#b892e8'), makeButterfly('#ffd166')];
+  butterflies.forEach((b, i) => {
+    b.userData.base = new THREE.Vector3(-6 + i * 6, 1.4 + i * 0.2, 5 - i * 3);
+    scn.add(b);
+  });
 
   const signpost = new THREE.Group();
   const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 1.6, 6), toonMat(0x8a5a34));
@@ -669,6 +896,14 @@ function buildRoom1() {
       key.rotation.y += dt;
       key.position.y = 1.1 + Math.sin(t * 2) * 0.08;
       ambientHearts.forEach(h => { h.position.y = h.userData.baseY + Math.sin(t + h.userData.phase) * 0.4; });
+      clouds.forEach(c => { c.position.x += dt * 0.35; if (c.position.x > 22) c.position.x = -22; });
+      gems.forEach(g => { g.rotation.y += dt * 1.2; g.position.y = 0.6 + Math.sin(t * 1.6 + g.userData.phase) * 0.15; });
+      butterflies.forEach(b => {
+        const t2 = t * 1.6 + b.userData.phase;
+        b.position.x = b.userData.base.x + Math.sin(t2) * 1.3;
+        b.position.z = b.userData.base.z + Math.cos(t2 * 0.7) * 1.3;
+        b.position.y = b.userData.base.y + Math.sin(t2 * 3) * 0.18;
+      });
     },
     onExit() { setRoom(buildRoom2); },
   };
@@ -678,9 +913,10 @@ function buildRoom2() {
   const scn = baseRoomShell('room2', 0xd9c8f5, 0xc9a7e0);
   const obstacles = [];
   makeSun(scn);
+  scn.add(makePathStrip(0xe4d4f7, PORTAL_Z + 1, 11, 3.2));
 
   const flowerColors = [0xff6f91, 0xffd166, 0xffffff, 0xb892e8];
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 24; i++) {
     const x = (Math.random() - 0.5) * 24;
     const z = (Math.random() - 0.5) * 22;
     if (Math.abs(x) < 2 && z < 4 && z > -14) continue;
@@ -689,6 +925,62 @@ function buildRoom2() {
 
   const rockSpots = [[-9, 5], [9, 6], [-10, -8], [10, -9]];
   rockSpots.forEach(([x, z]) => { scn.add(makeRock(x, z)); obstacles.push({ x, z, r: 0.9 }); });
+
+  const bushSpots = [[-5, 7], [5, 7], [-6, -5], [6, -6]];
+  bushSpots.forEach(([x, z]) => { scn.add(makeBush(x, z, 0x5fbf7a)); obstacles.push({ x, z, r: 0.7 }); });
+
+  scn.add(makeFenceAlongZ(-3, 9, 4, 4));
+  scn.add(makeFenceAlongZ(3, 9, 4, 4));
+  scn.add(makeBench(4, 6, -Math.PI / 2));
+  obstacles.push({ x: 4, z: 6, r: 0.6 });
+
+  const trellisMat = toonMat(0xd8b98a);
+  [-1.6, 1.6].forEach((x) => {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.4, 0.18), trellisMat);
+    post.position.set(x, 1.2, 6.5); post.castShadow = true; addOutline(post);
+    scn.add(post);
+    obstacles.push({ x, z: 6.5, r: 0.25 });
+  });
+  const trellisTop = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.2, 0.2), trellisMat);
+  trellisTop.position.set(0, 2.4, 6.5); trellisTop.castShadow = true; addOutline(trellisTop);
+  scn.add(trellisTop);
+  const trellisColors = [0xff6f91, 0xffd166, 0xffffff];
+  for (let i = 0; i < 6; i++) {
+    const bloom = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), toonMat(trellisColors[i % trellisColors.length]));
+    bloom.position.set(-1.5 + i * 0.6, 2.15, 6.5);
+    scn.add(bloom);
+  }
+
+  const lampSpots = [[-2, 2.5], [2, 2.5]];
+  const lamps = [];
+  lampSpots.forEach(([x, z]) => {
+    const torch = makeTorch(x, 0, z);
+    torch.flameGlow.material.map = GLOW_TEX_PURPLE;
+    torch.flameGlow.material.needsUpdate = true;
+    torch.group.scale.setScalar(1.3);
+    scn.add(torch.group);
+    obstacles.push({ x, z, r: 0.3 });
+    lamps.push(torch);
+  });
+
+  const clouds = [];
+  [[-13, 16, 8], [12, 17, -8], [-8, 15, -12], [15, 18, 10]].forEach(([x, y, z]) => {
+    const c = makeCloud(x, y, z, 1 + Math.random() * 0.5);
+    scn.add(c);
+    clouds.push(c);
+  });
+
+  const gems = [
+    makeGem(-6, 0.6, 9, 0xb892e8, GLOW_TEX_PURPLE),
+    makeGem(7, 0.6, -3, 0xb892e8, GLOW_TEX_PURPLE),
+  ];
+  gems.forEach(g => scn.add(g));
+
+  const butterflies = [makeButterfly('#ff6f91'), makeButterfly('#ffd166'), makeButterfly('#ffffff'), makeButterfly('#6bcf8f')];
+  butterflies.forEach((b, i) => {
+    b.userData.base = new THREE.Vector3(-7 + i * 4.5, 1.3 + i * 0.15, 2 - i * 2);
+    scn.add(b);
+  });
 
   const signpost = new THREE.Group();
   const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 1.6, 6), toonMat(0x8a5a34));
@@ -729,7 +1021,17 @@ function buildRoom2() {
     obstacles,
     interactables,
     portal: portalObj,
-    update() {},
+    update(dt, t) {
+      clouds.forEach(c => { c.position.x += dt * 0.3; if (c.position.x > 22) c.position.x = -22; });
+      gems.forEach(g => { g.rotation.y += dt * 1.2; g.position.y = 0.6 + Math.sin(t * 1.6 + g.userData.phase) * 0.15; });
+      butterflies.forEach(b => {
+        const t2 = t * 1.7 + b.userData.phase;
+        b.position.x = b.userData.base.x + Math.sin(t2) * 1.4;
+        b.position.z = b.userData.base.z + Math.cos(t2 * 0.7) * 1.4;
+        b.position.y = b.userData.base.y + Math.sin(t2 * 3) * 0.18;
+      });
+      lamps.forEach((l, i) => { l.flameGlow.material.opacity = 0.75 + Math.sin(t * 6 + i * 2) * 0.15; });
+    },
     onExit() { setRoom(buildRoom3); },
   };
 }
@@ -738,9 +1040,38 @@ function buildRoom3() {
   const scn = baseRoomShell('room3', 0xffd9b3, 0xe8c07d);
   const obstacles = [];
   makeSun(scn);
+  scn.add(makePathStrip(0xcfa06a, PORTAL_Z + 1, 11, 3));
 
   const palmSpots = [[12, -10], [-12, -9], [11, 9], [-11, 8]];
   palmSpots.forEach(([x, z]) => { scn.add(makeTree(x, z, 0x7fbf5a)); obstacles.push({ x, z, r: 1.0 }); });
+
+  scn.add(makeUmbrella(4, 7, 0xff6f91));
+  obstacles.push({ x: 4, z: 7, r: 0.4 });
+  scn.add(makeUmbrella(-4, -5, 0x6bcf8f));
+  obstacles.push({ x: -4, z: -5, r: 0.4 });
+
+  scn.add(makeCrate(3, 9));
+  obstacles.push({ x: 3, z: 9, r: 0.6 });
+  scn.add(makeBarrel(-3, 9));
+  obstacles.push({ x: -3, z: 9, r: 0.5 });
+  scn.add(makeBarrel(9, -2));
+  obstacles.push({ x: 9, z: -2, r: 0.5 });
+
+  const beachRockSpots = [[2, -4], [-2, -4], [6, 8], [-7, -2]];
+  beachRockSpots.forEach(([x, z]) => { scn.add(makeRock(x, z)); obstacles.push({ x, z, r: 0.7 }); });
+
+  const clouds = [];
+  [[-13, 16, -3], [12, 17, 9], [-9, 15, 10], [10, 18, -13]].forEach(([x, y, z]) => {
+    const c = makeCloud(x, y, z, 1 + Math.random() * 0.5);
+    scn.add(c);
+    clouds.push(c);
+  });
+
+  const gems = [
+    makeGem(10, 0.6, -6, 0x5fd6c8, GLOW_TEX_TEAL),
+    makeGem(-9, 0.6, 6, 0x5fd6c8, GLOW_TEX_TEAL),
+  ];
+  gems.forEach(g => scn.add(g));
 
   const orbSpots = [
     { x: 8, z: 4 }, { x: -8, z: 3 }, { x: 5, z: -7 }, { x: -6, z: -8 },
@@ -799,6 +1130,8 @@ function buildRoom3() {
     portal: portalObj,
     update(dt, t) {
       orbMeshes.forEach(o => { if (o.group.parent) { o.group.position.y = 1.4 + Math.sin(t * 2 + o.group.userData.phase) * 0.25; o.group.rotation.y += dt; } });
+      clouds.forEach(c => { c.position.x += dt * 0.32; if (c.position.x > 22) c.position.x = -22; });
+      gems.forEach(g => { g.rotation.y += dt * 1.2; g.position.y = 0.6 + Math.sin(t * 1.6 + g.userData.phase) * 0.15; });
       if (!introShown) { introShown = true; showToast(GAME_CONTENT.room3.introText, 3200); }
     },
     onExit() { setRoom(buildRoom4); },
@@ -810,15 +1143,41 @@ function buildRoom4() {
   const obstacles = [];
   makeStars(scn);
 
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 5.5), toonMat(0x8a2e3b));
+  rug.rotation.x = -Math.PI / 2;
+  rug.position.set(0, 0.015, -8);
+  scn.add(rug);
+
   const pillarSpots = [[-11, -11], [11, -11], [-11, 11], [11, 11]];
-  pillarSpots.forEach(([x, z]) => {
+  const torches = [];
+  pillarSpots.forEach(([x, z], i) => {
     const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 4.5, 8), toonMat(0x5b4f86));
     pillar.position.set(x, 2.25, z);
     pillar.castShadow = true;
     addOutline(pillar);
     scn.add(pillar);
     obstacles.push({ x, z, r: 1.1 });
+
+    if (i < 2) {
+      const torch = makeTorch(x * 0.78, 3.6, z * 0.78);
+      scn.add(torch.group);
+      torches.push(torch);
+      const light = new THREE.PointLight(0xffb35c, 0.9, 9);
+      light.position.set(x * 0.78, 3.9, z * 0.78);
+      scn.add(light);
+    }
   });
+
+  const bannerSpots = [
+    { x: -11, z: -8, rotY: Math.PI / 2, cA: 0xff6f91, cB: 0xffd166 },
+    { x: 11, z: -8, rotY: -Math.PI / 2, cA: 0xb892e8, cB: 0x6bcf8f },
+  ];
+  bannerSpots.forEach(b => scn.add(makeBanner(b.x, 2.8, b.z, b.rotY, b.cA, b.cB)));
+
+  scn.add(makeTreasurePile(1.6, -8.3));
+  obstacles.push({ x: 1.6, z: -8.3, r: 0.6 });
+  scn.add(makeTreasurePile(-1.6, -7.6));
+  obstacles.push({ x: -1.6, z: -7.6, r: 0.6 });
 
   const fireflies = [];
   for (let i = 0; i < 14; i++) {
@@ -833,6 +1192,7 @@ function buildRoom4() {
   const chest = makeChest();
   chest.group.position.set(0, 0, -9);
   scn.add(chest.group);
+  obstacles.push({ x: 0, z: -9, r: 0.85 });
 
   let opened = false;
   let openProgress = 0;
@@ -877,6 +1237,7 @@ function buildRoom4() {
         f.position.y = f.userData.base.y + Math.sin(t * 1.5 + f.userData.phase) * 0.4;
         f.position.x = f.userData.base.x + Math.sin(t * 0.6 + f.userData.phase) * 0.6;
       });
+      torches.forEach((tr, i) => { tr.flameGlow.material.opacity = 0.75 + Math.sin(t * 8 + i * 3) * 0.15; });
       if (opened && openProgress < 1) {
         openProgress = Math.min(1, openProgress + dt * 1.2);
         chest.lidPivot.rotation.x = -openProgress * 1.9;
@@ -924,6 +1285,22 @@ function showFinale() {
   startConfetti();
 }
 replayBtn.addEventListener('click', () => window.location.reload());
+
+// ===================== Loading screen =====================
+
+const loadingScreenEl = document.getElementById('loading-screen');
+const titleScreenEl = document.getElementById('title-screen');
+
+function hideLoadingScreen() {
+  loadingScreenEl.classList.add('fade-out');
+  titleScreenEl.classList.remove('hidden');
+  setTimeout(() => loadingScreenEl.classList.add('hidden'), 550);
+}
+if (document.readyState === 'complete') {
+  setTimeout(hideLoadingScreen, 900);
+} else {
+  window.addEventListener('load', () => setTimeout(hideLoadingScreen, 900));
+}
 
 // ===================== Title screen =====================
 

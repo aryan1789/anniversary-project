@@ -13,9 +13,22 @@
 <canvas id="game-canvas"></canvas>
 <div id="fade-overlay"></div>
 
-<div id="title-screen" class="overlay">
+<div id="loading-screen">
+  <div class="flower-spinner big">
+    <span class="petal"></span><span class="petal"></span><span class="petal"></span><span class="petal"></span>
+    <span class="petal"></span><span class="petal"></span><span class="petal"></span><span class="petal"></span>
+    <span class="core"></span>
+  </div>
+  <p class="loading-text">Loading your adventure...</p>
+</div>
+
+<div id="title-screen" class="overlay hidden">
   <div class="panel title-panel">
-    <div class="title-hearts">💛</div>
+    <div class="flower-spinner small">
+      <span class="petal"></span><span class="petal"></span><span class="petal"></span><span class="petal"></span>
+      <span class="petal"></span><span class="petal"></span><span class="petal"></span><span class="petal"></span>
+      <span class="core"></span>
+    </div>
     <h1 id="title-heading"></h1>
     <p id="title-subheading"></p>
     <button id="play-btn" class="chunky-btn">Start the Adventure</button>
