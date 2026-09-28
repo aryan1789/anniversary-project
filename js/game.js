@@ -341,6 +341,86 @@ function makeLimb(w, h, d, mat) {
   return pivot;
 }
 
+// ---- Face + hairstyle customization ----
+
+function hexToCss(hex) { return '#' + new THREE.Color(hex).getHexString(); }
+
+function makeFaceTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  return { canvas: c, ctx: c.getContext('2d'), texture: new THREE.CanvasTexture(c) };
+}
+
+const FACE_STYLES = {
+  happy(ctx, skin) {
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#2b2140';
+    ctx.beginPath(); ctx.ellipse(42, 55, 8, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(86, 55, 8, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#2b2140';
+    ctx.beginPath(); ctx.arc(64, 78, 20, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  },
+  wink(ctx, skin) {
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#2b2140';
+    ctx.beginPath(); ctx.ellipse(42, 55, 8, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#2b2140';
+    ctx.beginPath(); ctx.moveTo(78, 55); ctx.lineTo(94, 55); ctx.stroke();
+    ctx.beginPath(); ctx.arc(64, 78, 20, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  },
+  loved(ctx, skin) {
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#ff6f91';
+    [42, 86].forEach((cx) => {
+      ctx.beginPath();
+      ctx.moveTo(cx, 50);
+      ctx.bezierCurveTo(cx, 42, cx - 12, 42, cx - 12, 50);
+      ctx.bezierCurveTo(cx - 12, 58, cx, 62, cx, 68);
+      ctx.bezierCurveTo(cx, 62, cx + 12, 58, cx + 12, 50);
+      ctx.bezierCurveTo(cx + 12, 42, cx, 42, cx, 50);
+      ctx.fill();
+    });
+    ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#2b2140';
+    ctx.beginPath(); ctx.arc(64, 82, 18, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  },
+  surprised(ctx, skin) {
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#2b2140';
+    ctx.beginPath(); ctx.arc(42, 55, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(86, 55, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(64, 82, 8, 11, 0, 0, Math.PI * 2); ctx.fill();
+  },
+  sleepy(ctx, skin) {
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, 128, 128);
+    ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#2b2140';
+    ctx.beginPath(); ctx.moveTo(32, 55); ctx.lineTo(52, 55); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(76, 55); ctx.lineTo(96, 55); ctx.stroke();
+    ctx.beginPath(); ctx.arc(64, 78, 10, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+  },
+};
+
+function buildHairGroup(style, hairMat) {
+  const group = new THREE.Group();
+  const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.32, 0.9), hairMat);
+  top.position.y = 0.38; addOutline(top);
+  group.add(top);
+  if (style === 'long') {
+    const back = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.9, 0.2), hairMat);
+    back.position.set(0, -0.15, -0.35); addOutline(back);
+    group.add(back);
+  } else if (style === 'ponytail') {
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 0.75, 6), hairMat);
+    tail.position.set(0, -0.05, -0.5); tail.rotation.x = 0.35; addOutline(tail);
+    group.add(tail);
+  } else if (style === 'buns') {
+    [-0.32, 0.32].forEach((bx) => {
+      const bun = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), hairMat);
+      bun.position.set(bx, 0.1, -0.3); addOutline(bun);
+      group.add(bun);
+    });
+  }
+  return group;
+}
+
 function buildCharacter() {
   const shirtMat = toonMat(new THREE.Color(GAME_CONTENT.characterShirtColor));
   const skinMat = toonMat(new THREE.Color(GAME_CONTENT.characterSkinColor));
@@ -349,11 +429,15 @@ function buildCharacter() {
 
   const root = new THREE.Group();
 
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.85), skinMat);
+  const face = makeFaceTexture();
+  const faceMat = new THREE.MeshToonMaterial({ map: face.texture, gradientMap: TOON_GRADIENT });
+  // Box face order: +x, -x, +y, -y, +z, -z — the character faces +z locally, so that's the front.
+  const headMats = [skinMat, skinMat, skinMat, skinMat, faceMat, skinMat];
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.85), headMats);
   head.position.y = 1.95; head.castShadow = true; addOutline(head);
-  const hair = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.32, 0.9), hairMat);
-  hair.position.y = 0.38; addOutline(hair);
-  head.add(hair);
+
+  let hairGroup = buildHairGroup('short', hairMat);
+  head.add(hairGroup);
 
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.05, 0.5), shirtMat);
   torso.position.y = 1.15; torso.castShadow = true; addOutline(torso);
@@ -366,12 +450,45 @@ function buildCharacter() {
   root.add(head, torso, armL, armR, legL, legR);
   root.scale.setScalar(0.95);
 
-  return { root, armL, armR, legL, legR };
+  return { root, head, torso, armL, armR, legL, legR, shirtMat, skinMat, hairMat, face, hairGroup };
 }
 
 const character = buildCharacter();
 const player = character.root;
 let walkT = 0;
+
+function applyAppearance(appearance) {
+  character.shirtMat.color.set(appearance.shirtColor);
+  character.skinMat.color.set(appearance.skinColor);
+  character.hairMat.color.set(appearance.hairColor);
+
+  character.head.remove(character.hairGroup);
+  const newHair = buildHairGroup(appearance.hairStyle || 'short', character.hairMat);
+  character.head.add(newHair);
+  character.hairGroup = newHair;
+
+  const drawFace = FACE_STYLES[appearance.faceStyle] || FACE_STYLES.happy;
+  drawFace(character.face.ctx, hexToCss(appearance.skinColor));
+  character.face.texture.needsUpdate = true;
+}
+
+function loadAppearance() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('ah_appearance_v1')) || {}; } catch (e) { saved = {}; }
+  return {
+    shirtColor: saved.shirtColor || GAME_CONTENT.characterShirtColor,
+    skinColor: saved.skinColor || GAME_CONTENT.characterSkinColor,
+    hairColor: saved.hairColor || GAME_CONTENT.characterHairColor,
+    hairStyle: saved.hairStyle || 'short',
+    faceStyle: saved.faceStyle || 'happy',
+  };
+}
+function saveAppearance(appearance) {
+  try { localStorage.setItem('ah_appearance_v1', JSON.stringify(appearance)); } catch (e) { /* ignore */ }
+}
+
+let currentAppearance = loadAppearance();
+applyAppearance(currentAppearance);
 
 function animateWalk(moving, dt) {
   if (moving) {
@@ -887,6 +1004,7 @@ function buildRoom1() {
 
   return {
     scene: scn,
+    key: 'room1',
     name: GAME_CONTENT.room1.name,
     spawn: new THREE.Vector3(0, 0, 11),
     obstacles,
@@ -1016,6 +1134,7 @@ function buildRoom2() {
 
   return {
     scene: scn,
+    key: 'room2',
     name: GAME_CONTENT.room2.name,
     spawn: new THREE.Vector3(0, 0, 11),
     obstacles,
@@ -1123,6 +1242,7 @@ function buildRoom3() {
 
   return {
     scene: scn,
+    key: 'room3',
     name: GAME_CONTENT.room3.name,
     spawn: new THREE.Vector3(0, 0, 11),
     obstacles,
@@ -1227,6 +1347,7 @@ function buildRoom4() {
 
   return {
     scene: scn,
+    key: 'room4',
     name: 'The Treasure Room',
     spawn: new THREE.Vector3(0, 0, 10),
     obstacles,
@@ -1258,6 +1379,7 @@ function setRoom(factory) {
     player.position.copy(built.spawn);
     player.rotation.y = Math.PI;
     currentRoom = built;
+    if (typeof onRoomBuilt === 'function') onRoomBuilt(built);
     roomLabelEl.textContent = built.name;
     milestoneCounterEl.classList.add('hidden');
     if (built.name === GAME_CONTENT.room3.name) {
@@ -1335,6 +1457,7 @@ function animate() {
     }
 
     currentRoom.update(dt, clock.elapsedTime);
+    if (typeof updateCustomItems === 'function') updateCustomItems(dt, clock.elapsedTime);
   }
 
   renderer.render(scene, camera);
