@@ -1,0 +1,723 @@
+<!--
+  HEARTFELT DELIVERY — desktop app version
+  ==========================================
+  1. HER_NAME, MAIL_PASSWORD, LETTER — near the top of the <script>.
+  2. SONG — drop an instrumental file into assets/song.mp3 and set
+     SONG.url below to "assets/song.mp3". Until then the Music window
+     shows a "waiting for track" state instead of a broken player.
+  3. PHOTOS — one object per photo: { url, caption }. url points at a
+     file in assets/photos/. Add more by dropping a file in and copying
+     a block below.
+  4. WALLPAPER_URL — the desktop background photo, same deal, a path
+     under assets/photos/.
+  5. To run: open a terminal in this folder, `npm install`, then
+     `npm start`. Everything else (windows, dragging, the taskbar, the
+     boot screen) needs no edits.
+-->
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heartfelt Delivery</title>
+<style>
+  :root{
+    --face:#c0c0c0;
+    --face-light:#dfdfdf;
+    --hi:#ffffff;
+    --lo:#808080;
+    --lo-2:#404040;
+    --ink:#0a0a0a;
+    --titlebar-a:#000080;
+    --titlebar-b:#1084d0;
+    --accent:#f4b942;
+    --pixel:"Silkscreen","Courier New",monospace;
+    --mono:"Space Mono","Courier New",monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:#000;
+    color:var(--ink);
+    font-family:var(--mono);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%;}
+  button{font-family:inherit;}
+
+  @media (pointer:fine){
+    body, button{
+      cursor:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M3 1 L3 17 L7.2 13.6 L9.8 19.6 L12.6 18.3 L10 12.4 L15.4 12.4 Z' fill='%23ffffff' stroke='%23000000' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E") 3 1, auto;
+    }
+  }
+
+  /* ---------------- boot screen ---------------- */
+  #boot{
+    position:fixed;inset:0;z-index:200;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:22px;
+    background:linear-gradient(180deg,#cfe6ea,#f7d9e9);
+    transition:opacity .6s ease;
+  }
+  #boot.hide{opacity:0;pointer-events:none;}
+  .flower{width:96px;height:96px;overflow:visible;}
+  .flower .petal{transform-origin:48px 48px;animation:bloom 1.6s ease-out infinite;}
+  .flower .petal:nth-child(1){animation-delay:0s;}
+  .flower .petal:nth-child(2){animation-delay:.08s;}
+  .flower .petal:nth-child(3){animation-delay:.16s;}
+  .flower .petal:nth-child(4){animation-delay:.24s;}
+  .flower .petal:nth-child(5){animation-delay:.32s;}
+  .flower .petal:nth-child(6){animation-delay:.4s;}
+  @keyframes bloom{
+    0%{transform:scale(.2);opacity:.3;}
+    45%{transform:scale(1.08);opacity:1;}
+    100%{transform:scale(1);opacity:1;}
+  }
+  #boot .label{font-family:var(--pixel);font-size:18px;letter-spacing:.04em;color:#2b1f33;}
+  #boot .dots::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:dots 1.2s steps(4) infinite;}
+  @keyframes dots{0%{content:"";}25%{content:".";}50%{content:"..";}75%{content:"...";}}
+  @media (prefers-reduced-motion: reduce){ .flower .petal{animation:none;opacity:1;transform:scale(1);} }
+
+  /* ---------------- desktop ---------------- */
+  #desktop{
+    position:fixed;inset:0;
+    background-image:
+      linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.35)),
+      var(--wallpaper);
+    background-size:cover;
+    background-position:center;
+  }
+
+  .icons{
+    position:absolute;
+    top:16px;
+    left:12px;
+    display:flex;flex-direction:column;gap:22px;
+    z-index:5;
+  }
+  .icon{
+    width:78px;background:none;border:none;
+    display:flex;flex-direction:column;align-items:center;gap:5px;
+    padding:6px 4px;border-radius:2px;
+  }
+  .icon:active .glyph{transform:scale(.94);}
+  .icon .glyph{
+    width:34px;height:34px;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .1s ease;
+  }
+  .icon .glyph svg{
+    width:100%;height:100%;
+    filter:drop-shadow(1px 1px 0 rgba(0,0,0,.7));
+  }
+  .icon .label{
+    font-family:var(--pixel);
+    font-size:12px;color:#fff;
+    text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  }
+
+  /* ---------------- 3D bevel helpers ---------------- */
+  .bevel-out{
+    border-style:solid;border-width:1px;
+    border-color:var(--hi) var(--lo-2) var(--lo-2) var(--hi);
+    box-shadow: inset 1px 1px 0 var(--face-light), inset -1px -1px 0 var(--lo);
+    background:var(--face);
+  }
+  .bevel-in{
+    border-style:solid;border-width:1px;
+    border-color:var(--lo-2) var(--hi) var(--hi) var(--lo-2);
+    box-shadow: inset 1px 1px 0 var(--lo), inset -1px -1px 0 var(--face-light);
+    background:#fff;
+  }
+
+  /* ---------------- windows ---------------- */
+  .win{
+    position:absolute;
+    width:min(360px,88vw);
+    padding:3px;
+    display:flex;flex-direction:column;
+    z-index:10;
+    transform:scale(.92);
+    opacity:0;
+    pointer-events:none;
+    transition:transform .18s cubic-bezier(.2,.8,.3,1.2), opacity .16s ease;
+  }
+  .win.open{
+    transform:scale(1);
+    opacity:1;
+    pointer-events:auto;
+  }
+  .win .titlebar{
+    background:linear-gradient(90deg, var(--titlebar-a), var(--titlebar-b));
+    color:#fff;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:4px 4px 4px 8px;
+    font-family:var(--pixel);
+    font-size:13px;
+    letter-spacing:.02em;
+    touch-action:none;
+    margin-bottom:2px;
+  }
+  .win .titlebar .btns{display:flex;gap:3px;}
+  .win .titlebar button{
+    width:18px;height:16px;
+    font-size:11px;line-height:1;
+    padding:0;
+    color:#000;
+  }
+  .win .body{padding:12px;font-size:13.5px;line-height:1.55;background:var(--face);}
+
+  /* mail */
+  .lock-row{display:flex;gap:6px;}
+  .lock-row input{
+    flex:1;min-width:0;font-family:var(--mono);font-size:13px;padding:6px 8px;
+  }
+  .lock-row button{font-family:var(--pixel);font-size:12px;padding:6px 12px;}
+  .lock-hint{margin-top:8px;font-size:11.5px;color:var(--lo-2);}
+  .lock-error{margin-top:8px;font-size:11.5px;color:#8b0000;display:none;}
+  .letter{white-space:pre-line;background:#fff;padding:10px;}
+  .letter .sign{margin-top:14px;font-style:italic;}
+
+  /* mail montage */
+  .montage{position:relative;}
+  .montage-frame{
+    width:100%;aspect-ratio:4/3;overflow:hidden;background:#000;
+    position:relative;border:2px solid var(--lo-2);
+  }
+  .montage-media{
+    width:100%;height:100%;object-fit:cover;
+    position:absolute;inset:0;opacity:0;
+    transition:opacity .45s ease;
+  }
+  .montage-media.show{opacity:1;}
+  .montage-media.kb{animation:kbzoom 2.6s ease-out forwards;}
+  @keyframes kbzoom{from{transform:scale(1.02);}to{transform:scale(1.15);}}
+  .montage-bars{display:flex;gap:4px;margin-top:8px;}
+  .montage-bars .bar{flex:1;height:4px;background:rgba(0,0,0,.22);position:relative;overflow:hidden;}
+  .montage-bars .bar .fill{position:absolute;inset:0;width:0%;background:var(--titlebar-b);}
+  .montage-skip{
+    position:absolute;top:6px;right:6px;z-index:2;
+    font-size:11px;padding:4px 8px;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .montage-media.kb{animation:none;}
+  }
+
+  /* music */
+  .player-title{font-family:var(--pixel);font-size:13px;margin-bottom:2px;}
+  .player-artist{font-size:12px;color:var(--lo-2);margin-bottom:12px;}
+  .player-row{display:flex;align-items:center;gap:10px;}
+  .play-btn{width:34px;height:30px;flex:none;font-size:13px;}
+  .play-btn:disabled{opacity:.4;}
+  .scrub{flex:1;height:10px;position:relative;overflow:hidden;padding:0;}
+  .scrub .fill{position:absolute;inset:0;width:0%;background:var(--titlebar-b);}
+  .player-time{font-size:11px;color:var(--lo-2);font-variant-numeric:tabular-nums;}
+  .player-waiting{margin-top:10px;font-size:11.5px;color:var(--lo-2);}
+
+  /* photos */
+  .photo-frame{width:100%;aspect-ratio:4/3;overflow:hidden;background:#000;padding:0;}
+  .photo-frame img{width:100%;height:100%;object-fit:cover;display:block;}
+  .photo-caption{margin-top:8px;font-size:12.5px;color:#1a1a1a;text-align:center;}
+  .photo-nav{display:flex;align-items:center;justify-content:space-between;margin-top:10px;}
+  .photo-nav button{width:30px;height:26px;font-size:13px;}
+  .photo-count{font-size:11px;color:var(--lo-2);font-variant-numeric:tabular-nums;}
+
+  /* taskbar */
+  .taskbar{
+    position:fixed;left:0;right:0;bottom:0;
+    height:38px;
+    display:flex;align-items:center;gap:6px;
+    padding-inline:4px;
+    z-index:50;
+    border-width:1px 0 0 0;
+    border-style:solid;border-color:var(--hi);
+    box-shadow: inset 0 1px 0 var(--face-light);
+    background:var(--face);
+  }
+  #start-btn{
+    font-family:var(--pixel);font-size:13px;font-weight:bold;
+    display:flex;align-items:center;gap:6px;padding:5px 10px;height:30px;
+  }
+  #start-btn .grid{
+    display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
+    width:14px;height:14px;gap:1px;
+  }
+  #start-btn .grid span:nth-child(1){background:#e33;}
+  #start-btn .grid span:nth-child(2){background:#3a3;}
+  #start-btn .grid span:nth-child(3){background:#36e;}
+  #start-btn .grid span:nth-child(4){background:#ec3;}
+  .taskbar-sep{width:2px;height:26px;border-left:1px solid var(--lo);border-right:1px solid var(--hi);}
+  .taskbar-btns{flex:1;display:flex;gap:4px;overflow-x:auto;min-width:0;}
+  .taskbar-btn{
+    font-family:var(--pixel);font-size:11.5px;
+    padding:5px 10px;height:30px;flex:none;
+    max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .taskbar-btn.active{
+    border-color:var(--lo-2) var(--hi) var(--hi) var(--lo-2);
+    box-shadow: inset 1px 1px 0 var(--lo), inset -1px -1px 0 var(--face-light);
+  }
+  .clock{
+    font-family:var(--mono);font-size:12px;padding:6px 10px;height:30px;
+    display:flex;align-items:center;font-variant-numeric:tabular-nums;flex:none;
+  }
+
+  /* trash toast */
+  #toast{
+    position:fixed;left:50%;bottom:56px;transform:translate(-50%,12px);
+    background:#000;color:#fff;font-family:var(--pixel);font-size:12px;
+    padding:10px 16px;opacity:0;pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:80;
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0);}
+
+  @media (prefers-reduced-motion: reduce){
+    #boot,.win,#toast{transition:none;}
+  }
+</style>
+</head>
+<body>
+
+<div id="boot">
+  <svg class="flower" viewBox="0 0 96 96" fill="none">
+    <g>
+      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ff9fc0"/>
+      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ffb3cd" transform="rotate(60 48 48)"/>
+      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ff9fc0" transform="rotate(120 48 48)"/>
+      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ffb3cd" transform="rotate(180 48 48)"/>
+      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ff9fc0" transform="rotate(240 48 48)"/>
+      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ffb3cd" transform="rotate(300 48 48)"/>
+      <circle cx="48" cy="48" r="11" fill="#f4b942"/>
+    </g>
+  </svg>
+  <div class="label">waking up the desktop<span class="dots"></span></div>
+</div>
+
+<div id="desktop">
+  <div class="icons">
+    <button class="icon" data-open="win-mail" data-title="mail.exe">
+      <span class="glyph">
+        <svg viewBox="0 0 32 32"><rect x="3" y="9" width="26" height="17" fill="#f4f1e4" stroke="#000" stroke-width="1.6"/><path d="M3,9 L16,19 L29,9" fill="none" stroke="#000" stroke-width="1.6"/></svg>
+      </span>
+      <span class="label">Mail</span>
+    </button>
+    <button class="icon" data-open="win-music" data-title="music.exe">
+      <span class="glyph">
+        <svg viewBox="0 0 32 32"><polygon points="6,13 12,13 18,7 18,25 12,19 6,19" fill="#f4c430" stroke="#000" stroke-width="1.4"/><path d="M21,12 Q25,16 21,20" stroke="#000" stroke-width="1.6" fill="none"/><path d="M24,9 Q30,16 24,23" stroke="#000" stroke-width="1.6" fill="none"/></svg>
+      </span>
+      <span class="label">Music</span>
+    </button>
+    <button class="icon" data-open="win-photos" data-title="photos.exe">
+      <span class="glyph">
+        <svg viewBox="0 0 32 32"><rect x="3" y="4" width="26" height="24" fill="#fff" stroke="#000" stroke-width="1.6"/><rect x="6" y="7" width="20" height="17" fill="#7ec8e3" stroke="#000" stroke-width="1"/><circle cx="21" cy="11" r="2.6" fill="#ffd23f" stroke="#000" stroke-width="1"/><polygon points="6,24 13,13 18,19 22,14 26,24" fill="#4a7a4a" stroke="#000" stroke-width="1.2"/></svg>
+      </span>
+      <span class="label">Photos</span>
+    </button>
+    <button class="icon" id="icon-trash">
+      <span class="glyph">
+        <svg viewBox="0 0 32 32"><rect x="13" y="3" width="6" height="3" fill="#b8c4cc" stroke="#000" stroke-width="1.2"/><rect x="8" y="6" width="16" height="3" fill="#b8c4cc" stroke="#000" stroke-width="1.4"/><polygon points="9,10 23,10 21,27 11,27" fill="#c9d6dd" stroke="#000" stroke-width="1.4"/><path d="M13,12 L12,25 M16,12 L16,25 M19,12 L20,25" stroke="#7d8b93" stroke-width="1.2"/></svg>
+      </span>
+      <span class="label">Recycle Bin</span>
+    </button>
+  </div>
+
+  <section class="win bevel-out" id="win-mail" style="top:8%; left:10%;" data-title="mail.exe">
+    <div class="titlebar"><span>mail.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
+    <div class="body bevel-in">
+      <div id="mail-lock">
+        <div class="lock-row">
+          <input type="text" class="bevel-in" id="mail-pass" placeholder="password" autocomplete="off">
+          <button class="bevel-out" id="mail-unlock">Open</button>
+        </div>
+        <div class="lock-hint">hint: think back to the first date</div>
+        <div class="lock-error" id="mail-error">not quite — try again</div>
+      </div>
+      <div id="mail-montage" class="montage" hidden>
+        <div class="montage-frame">
+          <img id="montage-img" class="montage-media" alt="" hidden>
+          <video id="montage-vid" class="montage-media" muted playsinline hidden></video>
+          <button class="bevel-out montage-skip" id="montage-skip">Skip &#9199;</button>
+        </div>
+        <div class="montage-bars" id="montage-bars"></div>
+      </div>
+      <div id="mail-letter" class="letter bevel-in" hidden></div>
+    </div>
+  </section>
+
+  <section class="win bevel-out" id="win-music" style="top:26%; left:6%;" data-title="music.exe">
+    <div class="titlebar"><span>music.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
+    <div class="body">
+      <div class="player-title" id="song-title">—</div>
+      <div class="player-artist" id="song-artist">—</div>
+      <div class="player-row">
+        <button class="play-btn bevel-out" id="play-btn">&#9654;</button>
+        <div class="scrub bevel-in"><div class="fill" id="scrub-fill"></div></div>
+        <div class="player-time" id="song-time">0:00</div>
+      </div>
+      <div class="player-waiting" id="song-waiting" hidden>waiting for the track — drop it in and it'll play here</div>
+      <audio id="audio-el" preload="none"></audio>
+    </div>
+  </section>
+
+  <section class="win bevel-out" id="win-photos" style="top:12%; left:18%;" data-title="photos.exe">
+    <div class="titlebar"><span>photos.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
+    <div class="body">
+      <div class="photo-frame bevel-in"><img id="photo-img" alt=""></div>
+      <div class="photo-caption" id="photo-caption"></div>
+      <div class="photo-nav">
+        <button class="bevel-out" id="photo-prev">&#8592;</button>
+        <span class="photo-count" id="photo-count">1 / 1</span>
+        <button class="bevel-out" id="photo-next">&#8594;</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="toast"></div>
+
+  <div class="taskbar">
+    <button id="start-btn" class="bevel-out">
+      <span class="grid"><span></span><span></span><span></span><span></span></span>
+      Start
+    </button>
+    <div class="taskbar-sep"></div>
+    <div class="taskbar-btns" id="taskbar-btns"></div>
+    <div class="clock bevel-in" id="clock">--:--</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- edit these ----
+  var HER_NAME = "Riddhi";
+  var MAIL_PASSWORD = "nandos";
+
+  var LETTER =
+    HER_NAME + ",\n\n" +
+    "One year ago I took you to Nando's, not really knowing it'd turn into this.\n\n" +
+    "Since then it's been ice cream that made you scream in the middle of the street, a bear mascot that somehow still haunts me, jellyfish tanks, crab headbands in a photobooth, and you choosing to sit next to me through all of it anyway.\n\n" +
+    "I built you a whole computer for this because a text felt too small for a year like this one. There's more here than just this letter — go look around.\n\n" +
+    "Thank you for a year I'd happily rewatch on a loop.\n\n" +
+    "I love you.";
+
+  var SONG = {
+    title: "The Cut That Always Bleeds (Instrumental)",
+    artist: "Conan Gray",
+    url: "" // set to "assets/song.mp3" once the file is in place
+  };
+
+  var WALLPAPER_URL = "assets/photos/10-lookout.jpg";
+
+  // Plays automatically after the password is entered, before the letter
+  // shows. Placeholder set to the photos already on hand — replace with
+  // whatever spans the whole relationship once you've compiled it. Add
+  // videos by dropping a file into assets/videos/ and setting type: "video".
+  var MONTAGE = [
+    { type: "photo", url: "assets/photos/01-turtle.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/02-restaurant.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/03-cheek-kiss.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/04-photobooth.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/05-icecream.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/06-cinema.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/07-goofy.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/08-aquarium.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/09-donkey.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/10-lookout.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/11-river.jpg", duration: 2200 }
+  ];
+
+  var PHOTOS = [
+    { url: "assets/photos/02-restaurant.jpg", caption: "just us, mid dinner" },
+    { url: "assets/photos/03-cheek-kiss.jpg", caption: "close talker" },
+    { url: "assets/photos/04-photobooth.jpg", caption: "crab hats, Mar 13" },
+    { url: "assets/photos/01-turtle.jpg", caption: "the sea turtle that saw too much" },
+    { url: "assets/photos/05-icecream.jpg", caption: "screaming over dessert" },
+    { url: "assets/photos/06-cinema.jpg", caption: "Toppers premiere, red carpet energy" },
+    { url: "assets/photos/07-goofy.jpg", caption: "unserious as always" },
+    { url: "assets/photos/08-aquarium.jpg", caption: "jellyfish glow, we glow more" },
+    { url: "assets/photos/09-donkey.jpg", caption: "caught mid-bite" },
+    { url: "assets/photos/10-lookout.jpg", caption: "the view was fine too" },
+    { url: "assets/photos/11-river.jpg", caption: "matching hoodies, favourite person" }
+  ];
+  // -----------------------
+
+  document.getElementById("desktop").style.setProperty("--wallpaper", "url(" + WALLPAPER_URL + ")");
+
+  // boot screen
+  var boot = document.getElementById("boot");
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  setTimeout(function(){ boot.classList.add("hide"); }, reduceMotion ? 400 : 2200);
+
+  // clock
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function tickClock(){
+    var d = new Date();
+    var h = d.getHours(), ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12; if (h === 0) h = 12;
+    document.getElementById("clock").textContent = h + ":" + pad(d.getMinutes()) + " " + ampm;
+  }
+  tickClock(); setInterval(tickClock, 1000 * 15);
+
+  // ---- windows: open/close/focus/drag + taskbar buttons ----
+  var zTop = 10;
+  var activeWin = null;
+  var wins = Array.prototype.slice.call(document.querySelectorAll(".win"));
+  var taskbarBtns = document.getElementById("taskbar-btns");
+  var btnByWin = {};
+
+  wins.forEach(function(win){
+    var btn = document.createElement("button");
+    btn.className = "taskbar-btn bevel-out";
+    btn.textContent = win.dataset.title;
+    btn.hidden = true;
+    btn.addEventListener("click", function(){
+      if (activeWin === win) {
+        closeWin(win);
+      } else {
+        openWin(win);
+      }
+    });
+    taskbarBtns.appendChild(btn);
+    btnByWin[win.id] = btn;
+  });
+
+  function refreshActiveStyles(){
+    wins.forEach(function(w){
+      btnByWin[w.id].classList.toggle("active", w === activeWin);
+    });
+  }
+  function openWin(win){
+    zTop += 1;
+    win.style.zIndex = zTop;
+    win.classList.add("open");
+    btnByWin[win.id].hidden = false;
+    activeWin = win;
+    refreshActiveStyles();
+  }
+  function closeWin(win){
+    win.classList.remove("open");
+    btnByWin[win.id].hidden = true;
+    if (activeWin === win) activeWin = null;
+    refreshActiveStyles();
+  }
+
+  document.querySelectorAll(".icon[data-open]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      openWin(document.getElementById(btn.dataset.open));
+    });
+  });
+  document.querySelectorAll(".win [data-close]").forEach(function(x){
+    x.addEventListener("click", function(e){
+      e.stopPropagation();
+      closeWin(x.closest(".win"));
+    });
+  });
+  wins.forEach(function(win){
+    win.addEventListener("pointerdown", function(){
+      if (win.classList.contains("open")) { zTop += 1; win.style.zIndex = zTop; activeWin = win; refreshActiveStyles(); }
+    });
+  });
+
+  function makeDraggable(win){
+    var handle = win.querySelector(".titlebar");
+    var dragging = false, offX = 0, offY = 0;
+    handle.addEventListener("pointerdown", function(e){
+      if (e.target.closest("[data-close]")) return;
+      dragging = true;
+      var rect = win.getBoundingClientRect();
+      offX = e.clientX - rect.left;
+      offY = e.clientY - rect.top;
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener("pointermove", function(e){
+      if (!dragging) return;
+      var taskbarH = 46;
+      var maxX = window.innerWidth - win.offsetWidth - 6;
+      var maxY = window.innerHeight - win.offsetHeight - taskbarH;
+      var x = Math.min(Math.max(6, e.clientX - offX), Math.max(6, maxX));
+      var y = Math.min(Math.max(6, e.clientY - offY), Math.max(6, maxY));
+      win.style.left = x + "px";
+      win.style.top = y + "px";
+    });
+    ["pointerup","pointercancel"].forEach(function(ev){
+      handle.addEventListener(ev, function(){ dragging = false; });
+    });
+  }
+  wins.forEach(makeDraggable);
+
+  // start button: just opens mail as a friendly default entry point
+  document.getElementById("start-btn").addEventListener("click", function(){
+    openWin(document.getElementById("win-mail"));
+  });
+
+  // trash toast
+  var toast = document.getElementById("toast");
+  document.getElementById("icon-trash").addEventListener("click", function(){
+    toast.textContent = "nothing in here — just love";
+    toast.classList.add("show");
+    setTimeout(function(){ toast.classList.remove("show"); }, 1800);
+  });
+
+  // music (defined first so mail can trigger it)
+  var audio = document.getElementById("audio-el");
+  var playBtn = document.getElementById("play-btn");
+  document.getElementById("song-title").textContent = SONG.title;
+  document.getElementById("song-artist").textContent = SONG.artist;
+  if (SONG.url) {
+    audio.src = SONG.url;
+  } else {
+    playBtn.disabled = true;
+    document.getElementById("song-waiting").hidden = false;
+  }
+  function setPlaying(playing){
+    if (!SONG.url) return;
+    if (playing) { audio.play(); playBtn.innerHTML = "&#10074;&#10074;"; }
+    else { audio.pause(); playBtn.innerHTML = "&#9654;"; }
+  }
+  playBtn.addEventListener("click", function(){ setPlaying(audio.paused); });
+
+  // mail: password -> montage -> letter
+  document.getElementById("mail-unlock").addEventListener("click", unlockMail);
+  document.getElementById("mail-pass").addEventListener("keydown", function(e){
+    if (e.key === "Enter") unlockMail();
+  });
+  function unlockMail(){
+    var val = document.getElementById("mail-pass").value.trim().toLowerCase();
+    if (val !== MAIL_PASSWORD.trim().toLowerCase()) {
+      document.getElementById("mail-error").style.display = "block";
+      return;
+    }
+    document.getElementById("mail-lock").hidden = true;
+    openWin(document.getElementById("win-music"));
+    setPlaying(true);
+    startMontage();
+  }
+
+  function showLetter(){
+    var letterEl = document.getElementById("mail-letter");
+    letterEl.hidden = false;
+    letterEl.textContent = LETTER;
+    var sign = document.createElement("div");
+    sign.className = "sign";
+    sign.textContent = "— Aryan";
+    letterEl.appendChild(sign);
+  }
+
+  var montageTimer = null;
+  function buildMontageBars(){
+    var wrap = document.getElementById("montage-bars");
+    wrap.innerHTML = "";
+    MONTAGE.forEach(function(){
+      var bar = document.createElement("div");
+      bar.className = "bar";
+      bar.innerHTML = '<div class="fill"></div>';
+      wrap.appendChild(bar);
+    });
+  }
+  function animateBar(i, durationMs){
+    var bars = document.querySelectorAll("#montage-bars .fill");
+    for (var j = 0; j < i; j++) { if (bars[j]) { bars[j].style.transition = "none"; bars[j].style.width = "100%"; } }
+    var bar = bars[i];
+    if (!bar) return;
+    bar.style.transition = "none";
+    bar.style.width = "0%";
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        bar.style.transition = "width " + durationMs + "ms linear";
+        bar.style.width = "100%";
+      });
+    });
+  }
+  function startMontage(){
+    if (!MONTAGE.length) { showLetter(); return; }
+    document.getElementById("mail-montage").hidden = false;
+    buildMontageBars();
+    playMontageItem(0);
+  }
+  function playMontageItem(i){
+    if (i >= MONTAGE.length) { finishMontage(); return; }
+    clearTimeout(montageTimer);
+    var item = MONTAGE[i];
+    var imgEl = document.getElementById("montage-img");
+    var vidEl = document.getElementById("montage-vid");
+    imgEl.classList.remove("show","kb");
+    vidEl.classList.remove("show");
+    vidEl.pause();
+    vidEl.onended = null;
+    imgEl.onload = null;
+
+    if (item.type === "video") {
+      imgEl.hidden = true; vidEl.hidden = false;
+      vidEl.src = item.url;
+      vidEl.currentTime = 0;
+      vidEl.onloadeddata = function(){
+        vidEl.classList.add("show");
+        vidEl.play();
+        var dur = (vidEl.duration && isFinite(vidEl.duration)) ? vidEl.duration * 1000 : (item.duration || 3000);
+        animateBar(i, dur);
+      };
+      vidEl.onended = function(){ playMontageItem(i + 1); };
+    } else {
+      vidEl.hidden = true; imgEl.hidden = false;
+      imgEl.onload = function(){
+        imgEl.classList.add("show","kb");
+        var dur = item.duration || 2200;
+        animateBar(i, dur);
+        montageTimer = setTimeout(function(){ playMontageItem(i + 1); }, dur);
+      };
+      imgEl.src = item.url;
+    }
+  }
+  function finishMontage(){
+    document.getElementById("mail-montage").hidden = true;
+    showLetter();
+  }
+  document.getElementById("montage-skip").addEventListener("click", function(){
+    clearTimeout(montageTimer);
+    document.getElementById("montage-vid").pause();
+    finishMontage();
+  });
+
+  audio.addEventListener("timeupdate", function(){
+    if (!audio.duration) return;
+    var pct = (audio.currentTime / audio.duration) * 100;
+    document.getElementById("scrub-fill").style.width = pct + "%";
+    var mins = Math.floor(audio.currentTime / 60);
+    var secs = Math.floor(audio.currentTime % 60);
+    document.getElementById("song-time").textContent = mins + ":" + pad(secs);
+  });
+  audio.addEventListener("ended", function(){ playBtn.innerHTML = "&#9654;"; });
+
+  // photos
+  var photoIdx = 0;
+  var photoImg = document.getElementById("photo-img");
+  var photoCaption = document.getElementById("photo-caption");
+  var photoCount = document.getElementById("photo-count");
+  function renderPhoto(){
+    var p = PHOTOS[photoIdx];
+    photoImg.src = p.url;
+    photoImg.alt = p.caption;
+    photoCaption.textContent = p.caption;
+    photoCount.textContent = (photoIdx + 1) + " / " + PHOTOS.length;
+  }
+  document.getElementById("photo-prev").addEventListener("click", function(){
+    photoIdx = (photoIdx - 1 + PHOTOS.length) % PHOTOS.length;
+    renderPhoto();
+  });
+  document.getElementById("photo-next").addEventListener("click", function(){
+    photoIdx = (photoIdx + 1) % PHOTOS.length;
+    renderPhoto();
+  });
+  renderPhoto();
+
+  // open mail by default so the desktop never looks empty at rest
+  openWin(document.getElementById("win-mail"));
+})();
+</script>
+</body>
+</html>

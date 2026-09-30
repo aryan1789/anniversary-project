@@ -1,0 +1,13 @@
+{
+  "name": "heartfelt-delivery",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A retro desktop, just for her.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
