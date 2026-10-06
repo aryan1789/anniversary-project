@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Treasure Hunt For Her</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+<div id="fade-overlay"></div>
+
+<div id="loading-screen">
+  <div class="flower-spinner big">
+    <span class="petal"></span><span class="petal"></span><span class="petal"></span><span class="petal"></span>
+    <span class="petal"></span><span class="petal"></span><span class="petal"></span><span class="petal"></span>
+    <span class="core"></span>
+  </div>
+  <p class="loading-text">Loading your adventure...</p>
+</div>
+
+<div id="title-screen" class="overlay hidden">
+  <div class="panel title-panel">
+    <div class="flower-spinner small">
+      <span class="petal"></span><span class="petal"></span><span class="petal"></span><span class="petal"></span>
+      <span class="petal"></span><span class="petal"></span><span class="petal"></span><span class="petal"></span>
+      <span class="core"></span>
+    </div>
+    <h1 id="title-heading"></h1>
+    <p id="title-subheading"></p>
+    <button id="play-btn" class="chunky-btn">Start the Adventure</button>
+    <button id="customize-title-btn" class="chunky-btn secondary small">🎨 Customize Yourself</button>
+    <p class="hint-text">WASD to move · drag the mouse to look around · E to interact</p>
+  </div>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="room-label"></div>
+  <div id="hud-right">
+    <div id="hud-buttons">
+      <button id="customize-hud-btn" class="chunky-btn small" title="Customize yourself">🎨</button>
+      <button id="build-toggle-btn" class="chunky-btn small" title="Build mode">🛠️</button>
+    </div>
+    <div id="milestone-counter" class="hidden"></div>
+  </div>
+</div>
+
+<div id="build-tray" class="hidden">
+  <div class="panel build-panel">
+    <div class="build-header">
+      <strong>🛠️ Build Mode</strong>
+      <button id="build-exit-btn" class="chunky-btn small secondary">Done</button>
+    </div>
+    <p class="build-hint">Click an item below, then click the ground to place it. Click a placed item again to remove it.</p>
+    <div id="build-catalog" class="build-catalog"></div>
+    <p class="build-hint">Color (optional):</p>
+    <div id="build-colors" class="build-colors"></div>
+    <button id="build-ai-btn" class="chunky-btn small secondary">💡 Ask Claude for an idea</button>
+  </div>
+</div>
+
+<div id="customize-modal" class="overlay hidden">
+  <div class="panel customize-panel">
+    <h2>🎨 Customize You</h2>
+    <div class="customize-row">
+      <span class="customize-label">Skin</span>
+      <div class="swatch-row" id="skin-swatches"></div>
+    </div>
+    <div class="customize-row">
+      <span class="customize-label">Hair Color</span>
+      <div class="swatch-row" id="hair-color-swatches"></div>
+    </div>
+    <div class="customize-row">
+      <span class="customize-label">Hairstyle</span>
+      <div class="swatch-row" id="hair-style-swatches"></div>
+    </div>
+    <div class="customize-row">
+      <span class="customize-label">Outfit</span>
+      <div class="swatch-row" id="shirt-swatches"></div>
+    </div>
+    <div class="customize-row">
+      <span class="customize-label">Face</span>
+      <div class="swatch-row" id="face-swatches"></div>
+    </div>
+    <button id="customize-done-btn" class="chunky-btn">Done</button>
+  </div>
+</div>
+
+<div id="ai-idea-modal" class="overlay hidden">
+  <div class="panel ai-panel">
+    <h2>💡 Ask Claude</h2>
+    <div id="ai-key-setup">
+      <p class="ai-note">This uses your own Anthropic API key, typed in here and saved only in this browser on this laptop — it's never sent anywhere except Anthropic's servers, and needs an internet connection to work.</p>
+      <input id="ai-key-input" type="password" placeholder="sk-ant-...">
+      <select id="ai-model-select">
+        <option value="claude-opus-5-5">Claude Opus 5.5 (smartest)</option>
+        <option value="claude-sonnet-5-5">Claude Sonnet 5.5 (balanced)</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 (fastest / cheapest)</option>
+      </select>
+      <button id="ai-key-save-btn" class="chunky-btn small">Save key</button>
+    </div>
+    <div id="ai-chat" class="hidden">
+      <input id="ai-prompt-input" type="text" placeholder="e.g. something cozy for movie nights...">
+      <div class="ai-actions">
+        <button id="ai-ask-btn" class="chunky-btn small">Ask ✨</button>
+        <button id="ai-forget-key-btn" class="chunky-btn small secondary">Change key</button>
+      </div>
+      <div id="ai-result"></div>
+    </div>
+    <button id="ai-close-btn" class="chunky-btn small secondary">Close</button>
+  </div>
+</div>
+
+<div id="interact-prompt" class="hidden"></div>
+
+<div id="dialogue-box" class="overlay-bottom hidden">
+  <div class="panel dialogue-panel">
+    <p id="dialogue-text"></p>
+    <button id="dialogue-next" class="chunky-btn small">Next ▸</button>
+  </div>
+</div>
+
+<div id="memory-card" class="overlay hidden">
+  <div class="panel memory-panel">
+    <h2 id="memory-title"></h2>
+    <p id="memory-text"></p>
+    <button id="memory-close" class="chunky-btn">Continue</button>
+  </div>
+</div>
+
+<div id="riddle-modal" class="overlay hidden">
+  <div class="panel riddle-panel">
+    <p id="riddle-intro"></p>
+    <p id="riddle-question" class="riddle-question"></p>
+    <input id="riddle-input" type="text" placeholder="Type your answer..." autocomplete="off">
+    <div class="riddle-actions">
+      <button id="riddle-submit" class="chunky-btn">Answer</button>
+      <button id="riddle-hint-btn" class="chunky-btn secondary">Hint</button>
+    </div>
+    <p id="riddle-feedback"></p>
+  </div>
+</div>
+
+<div id="milestone-popup" class="hidden">
+  <div class="panel milestone-mini">
+    <strong id="milestone-popup-title"></strong>
+    <p id="milestone-popup-text"></p>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<div id="finale-overlay" class="overlay hidden">
+  <canvas id="confetti-canvas"></canvas>
+  <div class="panel letter-panel">
+    <div class="wax-seal">💌</div>
+    <p id="letter-title"></p>
+    <div id="letter-body"></div>
+    <p id="letter-signoff"></p>
+    <button id="replay-btn" class="chunky-btn">Play Again</button>
+  </div>
+</div>
+
+<script src="js/vendor/three.min.js"></script>
+<script src="js/content.js"></script>
+<script src="js/game.js"></script>
+<script src="js/sandbox.js"></script>
+</body>
+</html>

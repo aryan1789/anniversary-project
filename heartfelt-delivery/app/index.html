@@ -225,6 +225,11 @@
   .photo-nav button{width:30px;height:26px;font-size:13px;}
   .photo-count{font-size:11px;color:var(--lo-2);font-variant-numeric:tabular-nums;}
 
+  /* weblox */
+  .win-weblox{width:min(820px,94vw);}
+  .win-weblox .body{padding:0;background:#000;}
+  .weblox-frame{width:100%;height:min(600px,72vh);border:0;display:block;background:#1b1642;}
+
   /* taskbar */
   .taskbar{
     position:fixed;left:0;right:0;bottom:0;
@@ -317,6 +322,16 @@
       </span>
       <span class="label">Photos</span>
     </button>
+    <button class="icon" data-open="win-weblox" data-title="weblox.exe">
+      <span class="glyph">
+        <svg viewBox="0 0 32 32">
+          <polygon points="16,4 28,10 16,16 4,10" fill="#8fd3f4" stroke="#000" stroke-width="1.4"/>
+          <polygon points="4,10 16,16 16,28 4,22" fill="#5aa7c9" stroke="#000" stroke-width="1.4"/>
+          <polygon points="28,10 16,16 16,28 28,22" fill="#3f7fa0" stroke="#000" stroke-width="1.4"/>
+        </svg>
+      </span>
+      <span class="label">WEblox</span>
+    </button>
     <button class="icon" id="icon-trash">
       <span class="glyph">
         <svg viewBox="0 0 32 32"><rect x="13" y="3" width="6" height="3" fill="#b8c4cc" stroke="#000" stroke-width="1.2"/><rect x="8" y="6" width="16" height="3" fill="#b8c4cc" stroke="#000" stroke-width="1.4"/><polygon points="9,10 23,10 21,27 11,27" fill="#c9d6dd" stroke="#000" stroke-width="1.4"/><path d="M13,12 L12,25 M16,12 L16,25 M19,12 L20,25" stroke="#7d8b93" stroke-width="1.2"/></svg>
@@ -373,6 +388,13 @@
         <span class="photo-count" id="photo-count">1 / 1</span>
         <button class="bevel-out" id="photo-next">&#8594;</button>
       </div>
+    </div>
+  </section>
+
+  <section class="win bevel-out win-weblox" id="win-weblox" style="top:6%; left:24%;" data-title="weblox.exe">
+    <div class="titlebar"><span>weblox.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
+    <div class="body">
+      <iframe class="weblox-frame" src="weblox/index.html" title="WEblox"></iframe>
     </div>
   </section>
 
