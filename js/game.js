@@ -396,13 +396,53 @@ const FACE_STYLES = {
     ctx.beginPath(); ctx.moveTo(76, 55); ctx.lineTo(96, 55); ctx.stroke();
     ctx.beginPath(); ctx.arc(64, 78, 10, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
   },
+  grin(ctx, skin) {
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#2b2140';
+    ctx.beginPath(); ctx.ellipse(42, 55, 8, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(86, 55, 8, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(40, 76);
+    ctx.quadraticCurveTo(64, 102, 88, 76);
+    ctx.quadraticCurveTo(64, 90, 40, 76);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(46, 79, 36, 5);
+  },
+  calm(ctx, skin) {
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, 128, 128);
+    ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.strokeStyle = '#2b2140';
+    ctx.beginPath(); ctx.arc(42, 58, 7, Math.PI, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(86, 58, 7, Math.PI, 0); ctx.stroke();
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(64, 74, 14, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+  },
+  blush(ctx, skin) {
+    FACE_STYLES.happy(ctx, skin);
+    ctx.fillStyle = 'rgba(255,140,160,0.55)';
+    ctx.beginPath(); ctx.arc(26, 70, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(102, 70, 9, 0, Math.PI * 2); ctx.fill();
+  },
+  cheeky(ctx, skin) {
+    ctx.fillStyle = skin; ctx.fillRect(0, 0, 128, 128);
+    ctx.fillStyle = '#2b2140';
+    ctx.beginPath(); ctx.ellipse(42, 55, 8, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.strokeStyle = '#2b2140';
+    ctx.beginPath(); ctx.moveTo(78, 55); ctx.lineTo(94, 55); ctx.stroke();
+    ctx.beginPath(); ctx.arc(64, 74, 16, 0.1 * Math.PI, 0.65 * Math.PI); ctx.stroke();
+    ctx.fillStyle = '#ff6f91';
+    ctx.beginPath(); ctx.ellipse(70, 88, 8, 11, 0, 0, Math.PI * 2); ctx.fill();
+  },
 };
 
 function buildHairGroup(style, hairMat) {
   const group = new THREE.Group();
+  if (style === 'bald') return group;
+
   const top = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.32, 0.9), hairMat);
   top.position.y = 0.38; addOutline(top);
   group.add(top);
+
   if (style === 'long') {
     const back = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.9, 0.2), hairMat);
     back.position.set(0, -0.15, -0.35); addOutline(back);
@@ -417,6 +457,50 @@ function buildHairGroup(style, hairMat) {
       bun.position.set(bx, 0.1, -0.3); addOutline(bun);
       group.add(bun);
     });
+  } else if (style === 'bob') {
+    top.scale.set(1.04, 1.7, 1.04);
+    top.position.y = 0.26;
+    const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.56, 0.9), hairMat);
+    sideL.position.set(-0.49, 0.05, 0); addOutline(sideL);
+    const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.56, 0.9), hairMat);
+    sideR.position.set(0.49, 0.05, 0); addOutline(sideR);
+    group.add(sideL, sideR);
+  } else if (style === 'curly') {
+    [[-0.3, 0.52, 0.25], [0.3, 0.52, 0.25], [-0.36, 0.42, -0.22], [0.36, 0.42, -0.22], [0, 0.6, 0.02]].forEach(([cx, cy, cz]) => {
+      const curl = new THREE.Mesh(new THREE.SphereGeometry(0.23, 7, 7), hairMat);
+      curl.position.set(cx, cy, cz); addOutline(curl);
+      group.add(curl);
+    });
+  }
+  return group;
+}
+
+function buildAccessory(kind, colorHex) {
+  const group = new THREE.Group();
+  if (!kind || kind === 'none') return group;
+  const mat = toonMat(new THREE.Color(colorHex));
+  if (kind === 'bow') {
+    const knot = new THREE.Mesh(new THREE.SphereGeometry(0.07, 7, 7), mat);
+    knot.position.set(0.3, 0.5, 0.2);
+    const wingL = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.24, 7), mat);
+    wingL.rotation.z = Math.PI / 2; wingL.position.set(0.18, 0.5, 0.2);
+    const wingR = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.24, 7), mat);
+    wingR.rotation.z = -Math.PI / 2; wingR.position.set(0.42, 0.5, 0.2);
+    addOutline(knot); addOutline(wingL); addOutline(wingR);
+    group.add(knot, wingL, wingR);
+  } else if (kind === 'cap') {
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.47, 0.47, 0.05, 12), mat);
+    brim.position.set(0, 0.26, 0.08);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.44, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), mat);
+    dome.position.y = 0.24;
+    addOutline(brim); addOutline(dome);
+    group.add(brim, dome);
+  } else if (kind === 'headband') {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.06, 6, 16, Math.PI), mat);
+    band.rotation.x = Math.PI / 2; band.rotation.z = Math.PI;
+    band.position.y = 0.4;
+    addOutline(band);
+    group.add(band);
   }
   return group;
 }
@@ -439,6 +523,9 @@ function buildCharacter() {
   let hairGroup = buildHairGroup('short', hairMat);
   head.add(hairGroup);
 
+  let accessoryGroup = buildAccessory('none', '#ff6f91');
+  head.add(accessoryGroup);
+
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.05, 0.5), shirtMat);
   torso.position.y = 1.15; torso.castShadow = true; addOutline(torso);
 
@@ -450,7 +537,7 @@ function buildCharacter() {
   root.add(head, torso, armL, armR, legL, legR);
   root.scale.setScalar(0.95);
 
-  return { root, head, torso, armL, armR, legL, legR, shirtMat, skinMat, hairMat, face, hairGroup };
+  return { root, head, torso, armL, armR, legL, legR, shirtMat, skinMat, hairMat, pantsMat, face, hairGroup, accessoryGroup };
 }
 
 const character = buildCharacter();
@@ -461,11 +548,17 @@ function applyAppearance(appearance) {
   character.shirtMat.color.set(appearance.shirtColor);
   character.skinMat.color.set(appearance.skinColor);
   character.hairMat.color.set(appearance.hairColor);
+  character.pantsMat.color.set(appearance.pantsColor || '#3b3b58');
 
   character.head.remove(character.hairGroup);
   const newHair = buildHairGroup(appearance.hairStyle || 'short', character.hairMat);
   character.head.add(newHair);
   character.hairGroup = newHair;
+
+  character.head.remove(character.accessoryGroup);
+  const newAccessory = buildAccessory(appearance.accessory || 'none', appearance.accessoryColor || '#ff6f91');
+  character.head.add(newAccessory);
+  character.accessoryGroup = newAccessory;
 
   const drawFace = FACE_STYLES[appearance.faceStyle] || FACE_STYLES.happy;
   drawFace(character.face.ctx, hexToCss(appearance.skinColor));
@@ -479,8 +572,11 @@ function loadAppearance() {
     shirtColor: saved.shirtColor || GAME_CONTENT.characterShirtColor,
     skinColor: saved.skinColor || GAME_CONTENT.characterSkinColor,
     hairColor: saved.hairColor || GAME_CONTENT.characterHairColor,
+    pantsColor: saved.pantsColor || '#3b3b58',
     hairStyle: saved.hairStyle || 'short',
     faceStyle: saved.faceStyle || 'happy',
+    accessory: saved.accessory || 'none',
+    accessoryColor: saved.accessoryColor || '#ff6f91',
   };
 }
 function saveAppearance(appearance) {

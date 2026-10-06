@@ -48,6 +48,42 @@ const CATALOG = [
     build: (x, z) => makeTreasurePile(x, z) },
   { id: 'heart', label: 'Heart', icon: '💗', colorable: false, obstacleR: 0,
     build: (x, z) => { const s = makeSprite(HEART_TEX_PINK, 0.7, 0.9); s.position.set(x, 1.3, z); return s; } },
+  { id: 'balloon', label: 'Balloons', icon: '🎈', colorable: true, defaultColor: 0xff6f91, obstacleR: 0, animated: true,
+    build: (x, z, c) => {
+      const group = new THREE.Group();
+      const mat = toonMat(c || 0xff6f91);
+      [[-0.2, 0], [0.2, 0.15], [0, 0.3]].forEach(([ox, oy]) => {
+        const balloon = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), mat);
+        balloon.position.set(ox, 1.6 + oy, 0);
+        addOutline(balloon);
+        group.add(balloon);
+        const string = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 1.4, 4), toonMat(0x8a8a8a));
+        string.position.set(ox, 0.9 + oy * 0.5, 0);
+        group.add(string);
+      });
+      group.position.set(x, 0, z);
+      return group;
+    } },
+  { id: 'mailbox', label: 'Mailbox', icon: '📮', colorable: false, obstacleR: 0.35,
+    build: (x, z) => {
+      const group = new THREE.Group();
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.0, 0.12), toonMat(0x8a5a34));
+      post.position.y = 0.5; addOutline(post);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.55), toonMat(0xff6f91));
+      box.position.y = 1.05; addOutline(box);
+      const flag = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.16, 0.05), toonMat(0xffd166));
+      flag.position.set(0.22, 1.1, 0.3); addOutline(flag);
+      group.add(post, box, flag);
+      group.position.set(x, 0, z);
+      return group;
+    } },
+  { id: 'sparkle', label: 'Sparkle', icon: '✨', colorable: true, defaultColor: 0xffffff, obstacleR: 0, animated: true,
+    build: (x, z, c) => {
+      const s = makeSprite(GLOW_TEX_WHITE, 0.8, 0.9);
+      s.material.color.set(c || 0xffffff);
+      s.position.set(x, 1.6, z);
+      return s;
+    } },
 ];
 const CATALOG_BY_ID = {};
 CATALOG.forEach((c) => { CATALOG_BY_ID[c.id] = c; });
@@ -77,9 +113,10 @@ function rebuildPlacedItems() {
     if (!def) return;
     const obj = def.build(entry.x, entry.z, entry.color);
     obj.userData.customIndex = idx;
+    obj.scale.setScalar(entry.scale || 1);
     // An invisible, generously-sized hit target — some props (flowers, gems) are
     // too small to reliably click on directly, but invisible meshes still raycast.
-    const hitProxy = new THREE.Mesh(new THREE.SphereGeometry(0.7, 6, 6), new THREE.MeshBasicMaterial());
+    const hitProxy = new THREE.Mesh(new THREE.SphereGeometry(0.7 / (entry.scale || 1), 6, 6), new THREE.MeshBasicMaterial());
     hitProxy.visible = false;
     hitProxy.position.y = 0.5;
     obj.add(hitProxy);
@@ -90,9 +127,9 @@ function rebuildPlacedItems() {
   });
 }
 
-function addCustomItem(roomKey, itemId, x, z, color) {
+function addCustomItem(roomKey, itemId, x, z, color, scale) {
   if (!customItems[roomKey]) customItems[roomKey] = [];
-  customItems[roomKey].push({ itemId, x, z, color });
+  customItems[roomKey].push({ itemId, x, z, color, scale: scale || 1 });
   persistCustomItems();
   rebuildPlacedItems();
 }
@@ -126,6 +163,11 @@ function updateCustomItems(dt, t) {
       if (o.position.x > 22) o.position.x = -22;
     } else if (a.itemId === 'torch' && o.userData.flameGlow) {
       o.userData.flameGlow.material.opacity = 0.75 + Math.sin(t * 8 + a.phase) * 0.15;
+    } else if (a.itemId === 'balloon') {
+      o.position.y = Math.sin(t * 1.2 + a.phase) * 0.1;
+      o.rotation.y = Math.sin(t * 0.8 + a.phase) * 0.1;
+    } else if (a.itemId === 'sparkle') {
+      o.material.opacity = 0.45 + Math.sin(t * 3 + a.phase) * 0.4;
     }
   });
 }
@@ -135,6 +177,7 @@ function updateCustomItems(dt, t) {
 let buildModeActive = false;
 let selectedCatalogId = null;
 let selectedColor = null;
+let selectedScale = 1;
 let wasBlockingBeforeOverlay = false;
 
 const buildToggleBtn = document.getElementById('build-toggle-btn');
@@ -178,6 +221,24 @@ resetColorBtn.addEventListener('click', () => {
 });
 buildColorsEl.appendChild(resetColorBtn);
 resetColorBtn.classList.add('active');
+
+const SCALE_OPTIONS = [
+  { id: 'small', label: 'Small', value: 0.7 },
+  { id: 'normal', label: 'Normal', value: 1 },
+  { id: 'large', label: 'Large', value: 1.4 },
+];
+const buildScaleEl = document.getElementById('build-scale');
+SCALE_OPTIONS.forEach((opt) => {
+  const btn = document.createElement('button');
+  btn.className = 'scale-btn' + (opt.value === 1 ? ' active' : '');
+  btn.textContent = opt.label;
+  btn.addEventListener('click', () => {
+    selectedScale = opt.value;
+    document.querySelectorAll('.scale-btn').forEach((b) => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+  buildScaleEl.appendChild(btn);
+});
 
 function enterBuildMode() {
   if (gameState !== 'playing' || uiBlocking) return;
@@ -233,12 +294,25 @@ function handleBuildClick(e) {
   if (!selectedCatalogId) { showToast('Pick something from the tray first!'); return; }
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const point = new THREE.Vector3();
-  if (!raycaster.ray.intersectPlane(groundPlane, point)) return;
+  const hitGround = raycaster.ray.intersectPlane(groundPlane, point);
+  if (!hitGround) { showToast('Click somewhere lower, on the ground.'); return; }
+
+  // A click near the top of the screen is a ray nearly parallel to the
+  // ground, which can intersect it very far away. Cap the distance along
+  // the ray itself (preserving direction) before falling back to clamping
+  // x/z independently — clamping alone would snap far-off clicks to a
+  // room corner instead of roughly where you actually pointed.
+  const MAX_PLACE_DIST = 22;
+  const dist = raycaster.ray.origin.distanceTo(point);
+  if (dist > MAX_PLACE_DIST) {
+    point.copy(raycaster.ray.origin).addScaledVector(raycaster.ray.direction, MAX_PLACE_DIST);
+  }
+
   const half = ROOM_HALF - 1.5;
   point.x = Math.max(-half, Math.min(half, point.x));
   point.z = Math.max(-half, Math.min(11.5, point.z));
   if (Math.abs(point.x) < 3.2 && point.z < -11.5) { showToast("That's too close to the portal!"); return; }
-  addCustomItem(currentRoom.key, selectedCatalogId, point.x, point.z, selectedColor);
+  addCustomItem(currentRoom.key, selectedCatalogId, point.x, point.z, selectedColor, selectedScale);
   if (audioCtx) sfxPickup();
 }
 
@@ -260,21 +334,72 @@ function randomOpenSpot() {
 const SKIN_SWATCHES = ['#ffdbac', '#f2c9a0', '#e0ac69', '#c68642', '#8d5524', '#3b2314'];
 const HAIR_COLOR_SWATCHES = ['#3b2314', '#0b0b0b', '#8a5a34', '#ffd166', '#b892e8', '#ff6f91', '#f5efe0'];
 const SHIRT_SWATCHES = ['#ff6f91', '#6bcf8f', '#b892e8', '#ffd166', '#7fd8e8', '#f5efe0', '#2b2140'];
+const PANTS_SWATCHES = ['#3b3b58', '#2b2140', '#5b4326', '#6bcf8f', '#b892e8', '#f5efe0'];
 const HAIRSTYLES = [
   { id: 'short', label: 'Short' },
   { id: 'long', label: 'Long' },
   { id: 'ponytail', label: 'Ponytail' },
   { id: 'buns', label: 'Buns' },
+  { id: 'bob', label: 'Bob' },
+  { id: 'curly', label: 'Curly' },
+  { id: 'bald', label: 'Bald' },
 ];
+const ACCESSORY_OPTIONS = [
+  { id: 'none', label: '🚫 None' },
+  { id: 'bow', label: '🎀 Bow' },
+  { id: 'cap', label: '🧢 Cap' },
+  { id: 'headband', label: '➰ Headband' },
+];
+const ACCESSORY_COLOR_SWATCHES = ['#ff6f91', '#ffd166', '#b892e8', '#6bcf8f', '#7fd8e8', '#2b2140'];
+// Real previews of the drawn face (not emoji, which don't match the in-game art at all) —
+// each button renders the exact FACE_STYLES output at the player's current skin tone.
 const FACE_OPTIONS = [
-  { id: 'happy', label: '😊' },
-  { id: 'wink', label: '😉' },
-  { id: 'loved', label: '🥰' },
-  { id: 'surprised', label: '😲' },
-  { id: 'sleepy', label: '😴' },
+  { id: 'happy', label: 'Happy' },
+  { id: 'wink', label: 'Wink' },
+  { id: 'loved', label: 'Loved' },
+  { id: 'surprised', label: 'Surprised' },
+  { id: 'sleepy', label: 'Sleepy' },
+  { id: 'grin', label: 'Grin' },
+  { id: 'calm', label: 'Calm' },
+  { id: 'blush', label: 'Blush' },
+  { id: 'cheeky', label: 'Cheeky' },
 ];
 
-function renderColorSwatchRow(container, colors, key) {
+function renderFaceIcon(canvas, faceId, skinCss) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.scale(canvas.width / 128, canvas.height / 128);
+  (FACE_STYLES[faceId] || FACE_STYLES.happy)(ctx, skinCss);
+  ctx.restore();
+}
+
+function renderFaceOptions(container) {
+  container.innerHTML = '';
+  const skinCss = hexToCss(currentAppearance.skinColor);
+  FACE_OPTIONS.forEach((opt) => {
+    const b = document.createElement('button');
+    b.className = 'face-choice-btn' + (currentAppearance.faceStyle === opt.id ? ' active' : '');
+    const canvas = document.createElement('canvas');
+    canvas.width = 48; canvas.height = 48;
+    canvas.className = 'face-preview-canvas';
+    renderFaceIcon(canvas, opt.id, skinCss);
+    const label = document.createElement('span');
+    label.textContent = opt.label;
+    b.appendChild(canvas);
+    b.appendChild(label);
+    b.addEventListener('click', () => {
+      currentAppearance.faceStyle = opt.id;
+      applyAppearance(currentAppearance);
+      saveAppearance(currentAppearance);
+      container.querySelectorAll('.face-choice-btn').forEach((s) => s.classList.remove('active'));
+      b.classList.add('active');
+    });
+    container.appendChild(b);
+  });
+}
+
+function renderColorSwatchRow(container, colors, key, onChange) {
   container.innerHTML = '';
   colors.forEach((hex) => {
     const b = document.createElement('button');
@@ -287,6 +412,7 @@ function renderColorSwatchRow(container, colors, key) {
       saveAppearance(currentAppearance);
       container.querySelectorAll('.swatch-btn').forEach((s) => s.classList.remove('active'));
       b.classList.add('active');
+      if (onChange) onChange();
     });
     container.appendChild(b);
   });
@@ -310,11 +436,15 @@ function renderChoiceRow(container, options, key) {
 }
 
 function openCustomizePanel() {
-  renderColorSwatchRow(document.getElementById('skin-swatches'), SKIN_SWATCHES, 'skinColor');
+  const faceContainer = document.getElementById('face-swatches');
+  renderColorSwatchRow(document.getElementById('skin-swatches'), SKIN_SWATCHES, 'skinColor', () => renderFaceOptions(faceContainer));
   renderColorSwatchRow(document.getElementById('hair-color-swatches'), HAIR_COLOR_SWATCHES, 'hairColor');
   renderChoiceRow(document.getElementById('hair-style-swatches'), HAIRSTYLES, 'hairStyle');
   renderColorSwatchRow(document.getElementById('shirt-swatches'), SHIRT_SWATCHES, 'shirtColor');
-  renderChoiceRow(document.getElementById('face-swatches'), FACE_OPTIONS, 'faceStyle');
+  renderColorSwatchRow(document.getElementById('pants-swatches'), PANTS_SWATCHES, 'pantsColor');
+  renderChoiceRow(document.getElementById('accessory-swatches'), ACCESSORY_OPTIONS, 'accessory');
+  renderColorSwatchRow(document.getElementById('accessory-color-swatches'), ACCESSORY_COLOR_SWATCHES, 'accessoryColor');
+  renderFaceOptions(faceContainer);
   wasBlockingBeforeOverlay = uiBlocking;
   uiBlocking = true;
   document.getElementById('customize-modal').classList.remove('hidden');

@@ -56,8 +56,16 @@
     </div>
     <p class="build-hint">Click an item below, then click the ground to place it. Click a placed item again to remove it.</p>
     <div id="build-catalog" class="build-catalog"></div>
-    <p class="build-hint">Color (optional):</p>
-    <div id="build-colors" class="build-colors"></div>
+    <div class="build-options-row">
+      <div class="build-options-col">
+        <p class="build-hint">Color (optional):</p>
+        <div id="build-colors" class="build-colors"></div>
+      </div>
+      <div class="build-options-col">
+        <p class="build-hint">Size:</p>
+        <div id="build-scale" class="build-scale"></div>
+      </div>
+    </div>
     <button id="build-ai-btn" class="chunky-btn small secondary">💡 Ask Claude for an idea</button>
   </div>
 </div>
@@ -82,8 +90,20 @@
       <div class="swatch-row" id="shirt-swatches"></div>
     </div>
     <div class="customize-row">
+      <span class="customize-label">Pants</span>
+      <div class="swatch-row" id="pants-swatches"></div>
+    </div>
+    <div class="customize-row">
+      <span class="customize-label">Accessory</span>
+      <div class="swatch-row" id="accessory-swatches"></div>
+    </div>
+    <div class="customize-row">
+      <span class="customize-label">Accessory Color</span>
+      <div class="swatch-row" id="accessory-color-swatches"></div>
+    </div>
+    <div class="customize-row">
       <span class="customize-label">Face</span>
-      <div class="swatch-row" id="face-swatches"></div>
+      <div class="swatch-row face-swatch-row" id="face-swatches"></div>
     </div>
     <button id="customize-done-btn" class="chunky-btn">Done</button>
   </div>
