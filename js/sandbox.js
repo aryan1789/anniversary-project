@@ -259,6 +259,25 @@ function exitBuildMode() {
 buildToggleBtn.addEventListener('click', () => { buildModeActive ? exitBuildMode() : enterBuildMode(); });
 buildExitBtn.addEventListener('click', exitBuildMode);
 
+// ===================== Emotes =====================
+
+const emoteToggleBtn = document.getElementById('emote-toggle-btn');
+const emoteTrayEl = document.getElementById('emote-tray');
+const emoteExitBtn = document.getElementById('emote-exit-btn');
+
+function closeEmoteTray() { emoteTrayEl.classList.add('hidden'); }
+emoteToggleBtn.addEventListener('click', () => {
+  if (gameState !== 'playing' || uiBlocking) return;
+  emoteTrayEl.classList.toggle('hidden');
+});
+emoteExitBtn.addEventListener('click', closeEmoteTray);
+document.querySelectorAll('.emote-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    playEmote(btn.dataset.emote);
+    closeEmoteTray();
+  });
+});
+
 const raycaster = new THREE.Raycaster();
 const mouseNDC = new THREE.Vector2();
 let pointerDownX = 0, pointerDownY = 0;

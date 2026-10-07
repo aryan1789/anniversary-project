@@ -603,6 +603,55 @@ function animateWalk(moving, dt) {
   }
 }
 
+// ===================== Emotes =====================
+
+const EMOTES = {
+  wave: { duration: 1.8 },
+  dance: { duration: 2.4 },
+  cheer: { duration: 1.6 },
+};
+let activeEmote = null;
+
+function playEmote(name) {
+  if (!EMOTES[name] || gameState !== 'playing' || uiBlocking) return;
+  activeEmote = { name, t: 0, duration: EMOTES[name].duration };
+  uiBlocking = true;
+}
+
+function resetEmoteLimbs() {
+  character.armL.rotation.set(0, 0, 0);
+  character.armR.rotation.set(0, 0, 0);
+  character.legL.rotation.set(0, 0, 0);
+  character.legR.rotation.set(0, 0, 0);
+}
+
+function updateEmote(dt) {
+  if (!activeEmote) return;
+  activeEmote.t += dt;
+  const t = activeEmote.t;
+  if (activeEmote.name === 'wave') {
+    character.armR.rotation.x = -2.0;
+    character.armR.rotation.z = Math.sin(t * 9) * 0.4;
+  } else if (activeEmote.name === 'dance') {
+    character.armL.rotation.x = -1.3 + Math.sin(t * 10) * 0.5;
+    character.armR.rotation.x = -1.3 - Math.sin(t * 10) * 0.5;
+    character.legL.rotation.x = Math.sin(t * 10) * 0.25;
+    character.legR.rotation.x = -Math.sin(t * 10) * 0.25;
+    player.rotation.y += Math.sin(t * 6) * 0.015;
+  } else if (activeEmote.name === 'cheer') {
+    const lift = Math.min(1, t * 4) * (1 - Math.min(1, Math.max(0, t - (activeEmote.duration - 0.3)) / 0.3));
+    character.armL.rotation.x = -2.6 * lift;
+    character.armR.rotation.x = -2.6 * lift;
+    character.armL.rotation.z = Math.sin(t * 14) * 0.2;
+    character.armR.rotation.z = -Math.sin(t * 14) * 0.2;
+  }
+  if (activeEmote.t >= activeEmote.duration) {
+    activeEmote = null;
+    uiBlocking = false;
+    resetEmoteLimbs();
+  }
+}
+
 // ===================== Portal / chest builders =====================
 
 function makePortal(locked, glowColor = '#ffd166') {
@@ -722,7 +771,7 @@ function updatePlayer(dt) {
     clampToRoom(player.position, currentRoom.portal ? currentRoom.portal.locked : false);
     resolveObstacles(player.position, currentRoom.obstacles);
   }
-  animateWalk(moving, dt);
+  if (!activeEmote) animateWalk(moving, dt);
 
   const camOffset = new THREE.Vector3(Math.sin(cameraYaw) * -6.5, 4.4, Math.cos(cameraYaw) * -6.5);
   const camTarget = player.position.clone().add(camOffset);
@@ -1542,6 +1591,7 @@ function animate() {
 
   if (gameState === 'playing' && currentRoom) {
     updatePlayer(dt);
+    updateEmote(dt);
     updateInteractions();
 
     if (!uiBlocking) {

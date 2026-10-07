@@ -226,6 +226,7 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   font-weight: 700;
   z-index: 15;
   animation: bob 1.4s ease-in-out infinite;
+  pointer-events: none;
 }
 @keyframes bob {
   0%, 100% { transform: translateX(-50%) translateY(0); }
@@ -297,6 +298,7 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   transform: translateX(-50%);
   z-index: 20;
   animation: popIn 0.35s ease;
+  pointer-events: none;
 }
 .milestone-mini {
   max-width: 340px;
@@ -325,23 +327,66 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   padding: 10px 22px;
   font-weight: 700;
   z-index: 20;
+  pointer-events: none;
 }
 
-/* ---------- Build mode tray ---------- */
+/* ---------- Emote tray ---------- */
+#emote-tray {
+  position: fixed;
+  top: 80px;
+  right: 16px;
+  z-index: 23;
+}
+.emote-panel {
+  width: 220px;
+  border-color: var(--purple);
+  box-shadow: 0 8px 0 #8a67bf;
+}
+.emote-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.emote-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-family: 'Quicksand', sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+.emote-icon { font-size: 1.4rem; }
+
+/* ---------- Build mode tray ----------
+   Docked to the right side, not spanning the bottom of the screen —
+   a full-width bottom bar grew tall enough (catalog + colors + scale +
+   the AI button) to cover most of the ground near the player, which
+   silently ate clicks meant for placing objects. A side dock keeps
+   almost the whole canvas clickable regardless of how big this gets. */
 #build-tray {
   position: fixed;
-  bottom: 0;
-  left: 0;
+  top: 80px;
   right: 0;
+  bottom: 16px;
   z-index: 22;
   display: flex;
-  justify-content: center;
-  padding: 0 16px 16px;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0 16px;
   pointer-events: none;
 }
 .build-panel {
-  max-width: 620px;
-  width: 100%;
+  width: 300px;
+  max-width: 80vw;
+  max-height: 100%;
+  overflow-y: auto;
   border-color: var(--green);
   box-shadow: 0 8px 0 #4a9e68;
   pointer-events: auto;
