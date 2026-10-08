@@ -253,6 +253,7 @@ function exitBuildMode() {
   buildTrayEl.classList.add('hidden');
   canvas.style.cursor = '';
   selectedCatalogId = null;
+  rightDownTarget = null;
   document.querySelectorAll('.catalog-item').forEach((b) => b.classList.remove('active'));
   document.getElementById('ai-idea-modal').classList.add('hidden');
 }
@@ -282,30 +283,10 @@ const raycaster = new THREE.Raycaster();
 const mouseNDC = new THREE.Vector2();
 let pointerDownX = 0, pointerDownY = 0;
 
-canvas.addEventListener('contextmenu', (e) => { if (buildModeActive) e.preventDefault(); });
-
-canvas.addEventListener('pointerdown', (e) => {
-  if (e.button === 2) {
-    if (buildModeActive) pickRightDragTarget(e);
-    return;
-  }
-  pointerDownX = e.clientX; pointerDownY = e.clientY;
-});
-canvas.addEventListener('pointermove', (e) => {
-  if (!rightDragItem) return;
-  if (Math.hypot(e.clientX - rightDownX, e.clientY - rightDownY) > 6) rightDragged = true;
-  if (rightDragged) dragMoveItem(e);
-});
-canvas.addEventListener('pointerup', (e) => {
-  if (e.button === 2) { finishRightDrag(); return; }
-  if (!buildModeActive) return;
-  if (Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 6) return; // was a look-drag, not a click
-  handleBuildClick(e);
-});
-
-// Right-click a placed item to remove it with a tap, or right-click-and-drag
-// to move it — keeps left-click dedicated to placing new items.
-let rightDragItem = null;
+// Right-click a placed item and let go without moving the mouse to remove
+// it; right-click, drag, then let go to move it instead. Suppress the
+// browser's own context menu in build mode so this doesn't fight it.
+let rightDownTarget = null;
 let rightDownX = 0, rightDownY = 0;
 let rightDragged = false;
 
@@ -321,11 +302,8 @@ function screenToGroundPoint(e) {
   return raycaster.ray.intersectPlane(groundPlane, point) ? point : null;
 }
 
-function pickRightDragTarget(e) {
-  rightDownX = e.clientX; rightDownY = e.clientY;
-  rightDragged = false;
-  rightDragItem = null;
-  if (!currentRoom || !placedMeshes.length) return;
+function pickPlacedItemAt(e) {
+  if (!currentRoom || !placedMeshes.length) return null;
   const rect = canvas.getBoundingClientRect();
   mouseNDC.set(
     ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -333,37 +311,60 @@ function pickRightDragTarget(e) {
   );
   raycaster.setFromCamera(mouseNDC, camera);
   const hits = raycaster.intersectObjects(placedMeshes, true);
-  if (!hits.length) return;
+  if (!hits.length) return null;
   let obj = hits[0].object;
   while (obj && obj.userData.customIndex === undefined) obj = obj.parent;
-  if (obj) { rightDragItem = obj; canvas.style.cursor = 'grabbing'; }
+  return obj || null;
 }
 
-function dragMoveItem(e) {
-  if (!rightDragItem) return;
-  const point = screenToGroundPoint(e);
-  if (!point) return;
-  const half = ROOM_HALF - 1.5;
-  rightDragItem.position.x = Math.max(-half, Math.min(half, point.x));
-  rightDragItem.position.z = Math.max(-half, Math.min(11.5, point.z));
-}
+canvas.addEventListener('contextmenu', (e) => { if (buildModeActive) e.preventDefault(); });
 
-function finishRightDrag() {
-  if (!rightDragItem) return;
-  const idx = rightDragItem.userData.customIndex;
-  const list = currentRoom && customItems[currentRoom.key];
-  if (rightDragged && list && list[idx]) {
-    list[idx].x = rightDragItem.position.x;
-    list[idx].z = rightDragItem.position.z;
-    persistCustomItems();
-    rebuildPlacedItems();
-    showToast('Moved.');
-  } else if (!rightDragged && currentRoom) {
-    removeCustomItem(currentRoom.key, idx);
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.button === 2) {
+    rightDownX = e.clientX; rightDownY = e.clientY;
+    rightDragged = false;
+    rightDownTarget = buildModeActive ? pickPlacedItemAt(e) : null;
+    return;
   }
-  rightDragItem = null;
-  canvas.style.cursor = buildModeActive ? 'crosshair' : '';
-}
+  if (e.button !== 0) return;
+  pointerDownX = e.clientX; pointerDownY = e.clientY;
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!rightDownTarget) return;
+  if (!rightDragged && Math.hypot(e.clientX - rightDownX, e.clientY - rightDownY) > 6) rightDragged = true;
+  if (rightDragged) {
+    const point = screenToGroundPoint(e);
+    if (point) {
+      const half = ROOM_HALF - 1.5;
+      rightDownTarget.position.x = Math.max(-half, Math.min(half, point.x));
+      rightDownTarget.position.z = Math.max(-half, Math.min(11.5, point.z));
+    }
+  }
+});
+canvas.addEventListener('pointerup', (e) => {
+  if (e.button === 2) {
+    if (!rightDownTarget || !currentRoom) { rightDownTarget = null; return; }
+    const idx = rightDownTarget.userData.customIndex;
+    const list = customItems[currentRoom.key];
+    if (rightDragged) {
+      if (list && list[idx]) {
+        list[idx].x = rightDownTarget.position.x;
+        list[idx].z = rightDownTarget.position.z;
+        persistCustomItems();
+        rebuildPlacedItems();
+        showToast('Moved.');
+      }
+    } else {
+      removeCustomItem(currentRoom.key, idx);
+    }
+    rightDownTarget = null;
+    return;
+  }
+  if (e.button !== 0) return;
+  if (!buildModeActive) return;
+  if (Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 6) return; // was a look-drag, not a click
+  handleBuildClick(e);
+});
 
 function handleBuildClick(e) {
   if (!currentRoom) return;

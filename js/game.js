@@ -1687,11 +1687,11 @@ function hideLoadingScreen() {
     startGame();
   }, 550);
 }
-if (document.readyState === 'complete') {
-  setTimeout(hideLoadingScreen, 900);
-} else {
-  window.addEventListener('load', () => setTimeout(hideLoadingScreen, 900));
-}
+// Everything here loads near-instantly (one small bundled three.js file,
+// no images), so tying the loading screen's visible time to 'load'/readyState
+// meant it was often gone before a person could actually register the
+// lego-brick animation. Show it for a flat, guaranteed stretch instead.
+setTimeout(hideLoadingScreen, 2600);
 
 // ===================== Main loop =====================
 

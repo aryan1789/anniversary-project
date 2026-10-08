@@ -77,24 +77,24 @@
     animation:tulip-sway 2.6s ease-in-out .9s infinite;
   }
   .tulip .petal{transform-origin:40px 58px;opacity:0;}
-  .tulip .petal-l{animation:petal-bloom-l .9s cubic-bezier(.34,1.1,.64,1) .15s forwards;}
-  .tulip .petal-r{animation:petal-bloom-r .9s cubic-bezier(.34,1.1,.64,1) .22s forwards;}
-  .tulip .petal-c{animation:petal-bloom-c .9s cubic-bezier(.34,1.1,.64,1) .3s forwards;}
+  .tulip .petal-l{animation:petal-bloom-l 1.3s cubic-bezier(.3,1.2,.6,1) .25s forwards;}
+  .tulip .petal-r{animation:petal-bloom-r 1.3s cubic-bezier(.3,1.2,.6,1) .35s forwards;}
+  .tulip .petal-c{animation:petal-bloom-c 1.3s cubic-bezier(.3,1.2,.6,1) .45s forwards;}
   @keyframes stem-grow{to{stroke-dashoffset:0;}}
   @keyframes leaf-pop{to{opacity:1;}}
   @keyframes petal-bloom-l{
-    0%{opacity:0;transform:rotate(26deg) scale(.55);}
-    65%{opacity:1;transform:rotate(-6deg) scale(1.06);}
+    0%{opacity:0;transform:rotate(38deg) scale(.45);}
+    70%{opacity:1;transform:rotate(-8deg) scale(1.08);}
     100%{opacity:1;transform:rotate(0deg) scale(1);}
   }
   @keyframes petal-bloom-r{
-    0%{opacity:0;transform:rotate(-26deg) scale(.55);}
-    65%{opacity:1;transform:rotate(6deg) scale(1.06);}
+    0%{opacity:0;transform:rotate(-38deg) scale(.45);}
+    70%{opacity:1;transform:rotate(8deg) scale(1.08);}
     100%{opacity:1;transform:rotate(0deg) scale(1);}
   }
   @keyframes petal-bloom-c{
-    0%{opacity:0;transform:scaleY(.5) scaleX(.8);}
-    65%{opacity:1;transform:scaleY(1.08) scaleX(1.02);}
+    0%{opacity:0;transform:scaleY(.4) scaleX(.7);}
+    70%{opacity:1;transform:scaleY(1.1) scaleX(1.04);}
     100%{opacity:1;transform:scaleY(1) scaleX(1);}
   }
   @keyframes tulip-sway{
