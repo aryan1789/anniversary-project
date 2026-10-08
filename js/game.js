@@ -603,6 +603,13 @@ function animateWalk(moving, dt) {
   }
 }
 
+let idleT = 0;
+function idleBob(dt) {
+  idleT += dt;
+  character.head.position.y = 1.95 + Math.sin(idleT * 1.6) * 0.015;
+  character.torso.position.y = 1.15 + Math.sin(idleT * 1.6) * 0.01;
+}
+
 // ===================== Emotes =====================
 
 const EMOTES = {
@@ -727,6 +734,14 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyE' && activeInteractable && !uiBlocking && gameState === 'playing') {
     activeInteractable.onInteract();
   }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (grounded && !uiBlocking && gameState === 'playing' && !activeEmote) {
+      velocityY = JUMP_SPEED;
+      grounded = false;
+      playJumpSquash();
+    }
+  }
 });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
@@ -749,6 +764,89 @@ function lerpAngle(a, b, t) {
 }
 
 const PLAYER_SPEED = 6.2;
+const GRAVITY = -26;
+const JUMP_SPEED = 9.2;
+let velocityY = 0;
+let grounded = true;
+let squashT = 0;
+
+const SHADOW_TEX = makeGlowTexture('rgba(20,16,30,0.5)', 'rgba(20,16,30,0)');
+const playerShadow = new THREE.Mesh(
+  new THREE.CircleGeometry(0.62, 20),
+  new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, depthWrite: false })
+);
+playerShadow.rotation.x = -Math.PI / 2;
+playerShadow.renderOrder = 1;
+
+function playJumpSquash() {
+  squashT = 1;
+}
+
+let dustParticles = [];
+function spawnDust(x, z) {
+  for (let i = 0; i < 6; i++) {
+    const sprite = makeSprite(GLOW_TEX_WHITE, 0.22 + Math.random() * 0.1, 0.55);
+    sprite.position.set(x + (Math.random() - 0.5) * 0.3, 0.1, z + (Math.random() - 0.5) * 0.3);
+    scene.add(sprite);
+    dustParticles.push({
+      sprite,
+      vel: new THREE.Vector3((Math.random() - 0.5) * 1.6, 1.2 + Math.random() * 0.8, (Math.random() - 0.5) * 1.6),
+      life: 0.45,
+    });
+  }
+}
+function updateDust(dt) {
+  for (let i = dustParticles.length - 1; i >= 0; i--) {
+    const p = dustParticles[i];
+    p.life -= dt;
+    if (p.life <= 0) {
+      scene.remove(p.sprite);
+      dustParticles.splice(i, 1);
+      continue;
+    }
+    p.vel.y -= dt * 2.2;
+    p.sprite.position.addScaledVector(p.vel, dt);
+    p.sprite.material.opacity = Math.max(0, p.life / 0.45) * 0.55;
+  }
+}
+
+function updateJump(dt) {
+  if (!grounded) {
+    velocityY += GRAVITY * dt;
+    player.position.y += velocityY * dt;
+    if (player.position.y <= 0) {
+      player.position.y = 0;
+      if (velocityY < -4) spawnDust(player.position.x, player.position.z);
+      velocityY = 0;
+      grounded = true;
+      squashT = 1; // landing squash
+    }
+  }
+
+  // squash/stretch: stretch tall on the way up, squash flat on landing
+  if (squashT > 0) squashT = Math.max(0, squashT - dt * 4.5);
+  let stretch = 0;
+  if (!grounded) {
+    stretch = velocityY > 0 ? 0.14 : -0.1;
+  } else if (squashT > 0) {
+    stretch = -0.22 * squashT;
+  }
+  character.root.scale.set(0.95 * (1 - stretch * 0.6), 0.95 * (1 + stretch), 0.95 * (1 - stretch * 0.6));
+
+  if (!grounded) {
+    character.armL.rotation.x = -0.4;
+    character.armR.rotation.x = -0.4;
+    character.legL.rotation.x = 0.3;
+    character.legR.rotation.x = 0.3;
+  }
+
+  // ground contact shadow: follows player, shrinks & fades with jump height
+  playerShadow.position.set(player.position.x, 0.025, player.position.z);
+  const h = Math.max(0, player.position.y);
+  const shrink = Math.max(0.35, 1 - h * 0.14);
+  playerShadow.scale.setScalar(shrink);
+  playerShadow.material.opacity = Math.max(0.12, 0.5 - h * 0.05);
+}
 
 function updatePlayer(dt) {
   const forward = new THREE.Vector3(Math.sin(cameraYaw), 0, Math.cos(cameraYaw));
@@ -771,9 +869,17 @@ function updatePlayer(dt) {
     clampToRoom(player.position, currentRoom.portal ? currentRoom.portal.locked : false);
     resolveObstacles(player.position, currentRoom.obstacles);
   }
-  if (!activeEmote) animateWalk(moving, dt);
+  if (!activeEmote) animateWalk(moving && grounded, dt);
+  if (!activeEmote) updateJump(dt);
+  if (!activeEmote && grounded && !moving) {
+    idleBob(dt);
+  } else {
+    idleT = 0;
+    character.head.position.y = 1.95;
+    character.torso.position.y = 1.15;
+  }
 
-  const camOffset = new THREE.Vector3(Math.sin(cameraYaw) * -6.5, 4.4, Math.cos(cameraYaw) * -6.5);
+  const camOffset = new THREE.Vector3(Math.sin(cameraYaw) * -6.5, 4.4 + player.position.y * 0.4, Math.cos(cameraYaw) * -6.5);
   const camTarget = player.position.clone().add(camOffset);
   camera.position.lerp(camTarget, 0.12);
   camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1.5, 0)));
@@ -1521,8 +1627,11 @@ function setRoom(factory) {
     const built = factory();
     scene = built.scene;
     scene.add(player);
+    scene.add(playerShadow);
     player.position.copy(built.spawn);
     player.rotation.y = Math.PI;
+    velocityY = 0;
+    grounded = true;
     currentRoom = built;
     if (typeof onRoomBuilt === 'function') onRoomBuilt(built);
     roomLabelEl.textContent = built.name;
@@ -1605,6 +1714,7 @@ function animate() {
     currentRoom.update(dt, clock.elapsedTime);
     if (typeof updateCustomItems === 'function') updateCustomItems(dt, clock.elapsedTime);
   }
+  updateDust(dt);
 
   renderer.render(scene, camera);
 }

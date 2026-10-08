@@ -103,6 +103,31 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   color: var(--ink);
 }
 
+.block-loader {
+  display: grid;
+  grid-template-columns: repeat(2, 36px);
+  grid-template-rows: repeat(2, 36px);
+  gap: 10px;
+  perspective: 400px;
+  transform: rotateX(8deg);
+}
+.block-loader .block {
+  width: 36px;
+  height: 36px;
+  border-radius: 7px;
+  border: 3px solid var(--ink);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.22);
+  animation: block-bounce 1.2s ease-in-out infinite;
+}
+.block-loader .b1 { background: var(--pink); animation-delay: 0s; }
+.block-loader .b2 { background: var(--yellow); animation-delay: 0.15s; }
+.block-loader .b3 { background: var(--purple); animation-delay: 0.3s; }
+.block-loader .b4 { background: var(--green); animation-delay: 0.45s; }
+@keyframes block-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  50% { transform: translateY(-18px) rotate(10deg) scale(1.1); }
+}
+
 .flower-spinner {
   position: relative;
   margin: 0 auto;

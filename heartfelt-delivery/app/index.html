@@ -59,27 +59,47 @@
     position:fixed;inset:0;z-index:200;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     gap:22px;
-    background:linear-gradient(180deg,#cfe6ea,#f7d9e9);
+    background:linear-gradient(180deg,#dce9fb,#eef5ff);
     transition:opacity .6s ease;
   }
   #boot.hide{opacity:0;pointer-events:none;}
-  .flower{width:96px;height:96px;overflow:visible;}
-  .flower .petal{transform-origin:48px 48px;animation:bloom 1.6s ease-out infinite;}
-  .flower .petal:nth-child(1){animation-delay:0s;}
-  .flower .petal:nth-child(2){animation-delay:.08s;}
-  .flower .petal:nth-child(3){animation-delay:.16s;}
-  .flower .petal:nth-child(4){animation-delay:.24s;}
-  .flower .petal:nth-child(5){animation-delay:.32s;}
-  .flower .petal:nth-child(6){animation-delay:.4s;}
-  @keyframes bloom{
-    0%{transform:scale(.2);opacity:.3;}
-    45%{transform:scale(1.08);opacity:1;}
-    100%{transform:scale(1);opacity:1;}
+  .tulip{width:84px;height:120px;overflow:visible;}
+  .tulip .stem{
+    stroke-dasharray:70;stroke-dashoffset:70;
+    animation:stem-grow .9s ease-out forwards;
+  }
+  .tulip .leaf{
+    transform-origin:40px 92px;opacity:0;
+    animation:leaf-pop .6s ease-out .45s forwards;
+  }
+  .tulip .flower-group{
+    transform-origin:40px 58px;
+    animation:tulip-sway 2.6s ease-in-out .9s infinite;
+  }
+  .tulip .petal{
+    transform-origin:40px 58px;opacity:0;
+    animation:petal-bloom .7s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  .tulip .petal-l{animation-delay:.15s;}
+  .tulip .petal-r{animation-delay:.22s;}
+  .tulip .petal-c{animation-delay:.3s;}
+  @keyframes stem-grow{to{stroke-dashoffset:0;}}
+  @keyframes leaf-pop{to{opacity:1;}}
+  @keyframes petal-bloom{
+    0%{opacity:0;transform:scale(.3);}
+    60%{opacity:1;transform:scale(1.1);}
+    100%{opacity:1;transform:scale(1);}
+  }
+  @keyframes tulip-sway{
+    0%,100%{transform:rotate(-3deg);}
+    50%{transform:rotate(3deg);}
   }
   #boot .label{font-family:var(--pixel);font-size:18px;letter-spacing:.04em;color:#2b1f33;}
   #boot .dots::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:dots 1.2s steps(4) infinite;}
   @keyframes dots{0%{content:"";}25%{content:".";}50%{content:"..";}75%{content:"...";}}
-  @media (prefers-reduced-motion: reduce){ .flower .petal{animation:none;opacity:1;transform:scale(1);} }
+  @media (prefers-reduced-motion: reduce){
+    .tulip .stem,.tulip .leaf,.tulip .petal,.tulip .flower-group{animation:none;opacity:1;stroke-dashoffset:0;transform:none;}
+  }
 
   /* ---------------- desktop ---------------- */
   #desktop{
@@ -288,15 +308,13 @@
 <body>
 
 <div id="boot">
-  <svg class="flower" viewBox="0 0 96 96" fill="none">
-    <g>
-      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ff9fc0"/>
-      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ffb3cd" transform="rotate(60 48 48)"/>
-      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ff9fc0" transform="rotate(120 48 48)"/>
-      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ffb3cd" transform="rotate(180 48 48)"/>
-      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ff9fc0" transform="rotate(240 48 48)"/>
-      <ellipse class="petal" cx="48" cy="26" rx="10" ry="18" fill="#ffb3cd" transform="rotate(300 48 48)"/>
-      <circle cx="48" cy="48" r="11" fill="#f4b942"/>
+  <svg class="tulip" viewBox="0 0 80 120" fill="none">
+    <path class="stem" d="M40 116 C40 96 38 78 40 56" stroke="#3d8f5b" stroke-width="5" stroke-linecap="round"/>
+    <path class="leaf" d="M40 92 C24 92 13 82 13 68 C27 71 37 79 40 92 Z" fill="#4caf6f"/>
+    <g class="flower-group">
+      <path class="petal petal-l" d="M40 58 C28 58 21 45 25 30 C27 21 34 14 40 14 C40 14 40 40 40 58 Z" fill="#2f5bb5"/>
+      <path class="petal petal-r" d="M40 58 C52 58 59 45 55 30 C53 21 46 14 40 14 C40 14 40 40 40 58 Z" fill="#2f5bb5"/>
+      <path class="petal petal-c" d="M40 58 C32 58 27 44 30 28 C32 18 37 13 40 13 C43 13 48 18 50 28 C53 44 48 58 40 58 Z" fill="#5f8fe8"/>
     </g>
   </svg>
   <div class="label">waking up the desktop<span class="dots"></span></div>
