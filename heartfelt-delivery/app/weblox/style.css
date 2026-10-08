@@ -103,29 +103,48 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   color: var(--ink);
 }
 
-.block-loader {
-  display: grid;
-  grid-template-columns: repeat(2, 36px);
-  grid-template-rows: repeat(2, 36px);
-  gap: 10px;
-  perspective: 400px;
-  transform: rotateX(8deg);
+.lego-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 5px;
+  height: 140px;
+  justify-content: flex-start;
 }
-.block-loader .block {
-  width: 36px;
-  height: 36px;
-  border-radius: 7px;
-  border: 3px solid var(--ink);
-  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.22);
-  animation: block-bounce 1.2s ease-in-out infinite;
+.lego-brick {
+  position: relative;
+  width: 68px;
+  height: 26px;
+  border-radius: 4px;
+  border: 2.5px solid var(--ink);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  animation: lego-drop 2.4s cubic-bezier(.34, 1.1, .64, 1) infinite;
 }
-.block-loader .b1 { background: var(--pink); animation-delay: 0s; }
-.block-loader .b2 { background: var(--yellow); animation-delay: 0.15s; }
-.block-loader .b3 { background: var(--purple); animation-delay: 0.3s; }
-.block-loader .b4 { background: var(--green); animation-delay: 0.45s; }
-@keyframes block-bounce {
-  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
-  50% { transform: translateY(-18px) rotate(10deg) scale(1.1); }
+.lego-brick i {
+  position: absolute;
+  top: -7px;
+  width: 13px;
+  height: 9px;
+  border-radius: 3px 3px 0 0;
+  background: inherit;
+  border: 2.5px solid var(--ink);
+  border-bottom: none;
+}
+.lego-brick i:nth-child(1) { left: 11px; }
+.lego-brick i:nth-child(2) { right: 11px; }
+.lb1 { background: var(--pink); animation-delay: 0s; }
+.lb2 { background: var(--yellow); animation-delay: 0.3s; }
+.lb3 { background: var(--purple); animation-delay: 0.6s; }
+.lb4 { background: var(--green); animation-delay: 0.9s; }
+@keyframes lego-drop {
+  0% { opacity: 0; transform: translateY(-70px); }
+  14% { opacity: 1; transform: translateY(0); }
+  19% { transform: translateY(-8px); }
+  26% { transform: translateY(0); }
+  72% { opacity: 1; transform: translateY(0); }
+  86% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 0; transform: translateY(-70px); }
 }
 
 .flower-spinner {
@@ -133,7 +152,6 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   margin: 0 auto;
   animation: flower-spin 1.8s linear infinite;
 }
-.flower-spinner.big { width: 110px; height: 110px; --fs-w: 20px; --fs-h: 42px; --fs-r: 32px; --fs-core: 30px; }
 .flower-spinner.small { width: 52px; height: 52px; --fs-w: 10px; --fs-h: 20px; --fs-r: 15px; --fs-core: 14px; margin-bottom: 10px; }
 
 .flower-spinner .petal {
@@ -185,17 +203,6 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   z-index: 30;
   padding: 20px;
 }
-#title-screen { background: radial-gradient(circle at 50% 30%, rgba(255,209,102,0.25), rgba(27,22,66,0.75)); }
-.title-panel {
-  text-align: center;
-  max-width: 520px;
-}
-#title-heading { font-size: 1.9rem; margin: 0 0 10px; line-height: 1.25; }
-#title-subheading { font-size: 1.05rem; margin: 0 0 22px; opacity: 0.85; }
-.hint-text { font-size: 0.85rem; opacity: 0.6; margin-top: 18px; }
-.title-panel .chunky-btn { display: block; width: 100%; margin: 0 0 12px; }
-.title-panel .chunky-btn:last-of-type { margin-bottom: 0; }
-
 /* ---------- HUD ---------- */
 #hud {
   position: fixed;
@@ -592,5 +599,4 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
 
 @media (max-width: 560px) {
   .panel { padding: 20px 18px; }
-  #title-heading { font-size: 1.5rem; }
 }

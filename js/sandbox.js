@@ -282,35 +282,98 @@ const raycaster = new THREE.Raycaster();
 const mouseNDC = new THREE.Vector2();
 let pointerDownX = 0, pointerDownY = 0;
 
-canvas.addEventListener('pointerdown', (e) => { pointerDownX = e.clientX; pointerDownY = e.clientY; });
+canvas.addEventListener('contextmenu', (e) => { if (buildModeActive) e.preventDefault(); });
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.button === 2) {
+    if (buildModeActive) pickRightDragTarget(e);
+    return;
+  }
+  pointerDownX = e.clientX; pointerDownY = e.clientY;
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!rightDragItem) return;
+  if (Math.hypot(e.clientX - rightDownX, e.clientY - rightDownY) > 6) rightDragged = true;
+  if (rightDragged) dragMoveItem(e);
+});
 canvas.addEventListener('pointerup', (e) => {
+  if (e.button === 2) { finishRightDrag(); return; }
   if (!buildModeActive) return;
   if (Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 6) return; // was a look-drag, not a click
   handleBuildClick(e);
 });
 
-function handleBuildClick(e) {
-  if (!currentRoom) return;
+// Right-click a placed item to remove it with a tap, or right-click-and-drag
+// to move it — keeps left-click dedicated to placing new items.
+let rightDragItem = null;
+let rightDownX = 0, rightDownY = 0;
+let rightDragged = false;
+
+function screenToGroundPoint(e) {
   const rect = canvas.getBoundingClientRect();
   mouseNDC.set(
     ((e.clientX - rect.left) / rect.width) * 2 - 1,
     -((e.clientY - rect.top) / rect.height) * 2 + 1
   );
   raycaster.setFromCamera(mouseNDC, camera);
+  const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const point = new THREE.Vector3();
+  return raycaster.ray.intersectPlane(groundPlane, point) ? point : null;
+}
 
-  if (placedMeshes.length) {
-    const hits = raycaster.intersectObjects(placedMeshes, true);
-    if (hits.length) {
-      let obj = hits[0].object;
-      while (obj && obj.userData.customIndex === undefined) obj = obj.parent;
-      if (obj && obj.userData.customIndex !== undefined) {
-        removeCustomItem(currentRoom.key, obj.userData.customIndex);
-        return;
-      }
-    }
+function pickRightDragTarget(e) {
+  rightDownX = e.clientX; rightDownY = e.clientY;
+  rightDragged = false;
+  rightDragItem = null;
+  if (!currentRoom || !placedMeshes.length) return;
+  const rect = canvas.getBoundingClientRect();
+  mouseNDC.set(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1
+  );
+  raycaster.setFromCamera(mouseNDC, camera);
+  const hits = raycaster.intersectObjects(placedMeshes, true);
+  if (!hits.length) return;
+  let obj = hits[0].object;
+  while (obj && obj.userData.customIndex === undefined) obj = obj.parent;
+  if (obj) { rightDragItem = obj; canvas.style.cursor = 'grabbing'; }
+}
+
+function dragMoveItem(e) {
+  if (!rightDragItem) return;
+  const point = screenToGroundPoint(e);
+  if (!point) return;
+  const half = ROOM_HALF - 1.5;
+  rightDragItem.position.x = Math.max(-half, Math.min(half, point.x));
+  rightDragItem.position.z = Math.max(-half, Math.min(11.5, point.z));
+}
+
+function finishRightDrag() {
+  if (!rightDragItem) return;
+  const idx = rightDragItem.userData.customIndex;
+  const list = currentRoom && customItems[currentRoom.key];
+  if (rightDragged && list && list[idx]) {
+    list[idx].x = rightDragItem.position.x;
+    list[idx].z = rightDragItem.position.z;
+    persistCustomItems();
+    rebuildPlacedItems();
+    showToast('Moved.');
+  } else if (!rightDragged && currentRoom) {
+    removeCustomItem(currentRoom.key, idx);
   }
+  rightDragItem = null;
+  canvas.style.cursor = buildModeActive ? 'crosshair' : '';
+}
 
+function handleBuildClick(e) {
+  if (!currentRoom) return;
   if (!selectedCatalogId) { showToast('Pick something from the tray first!'); return; }
+  const rect = canvas.getBoundingClientRect();
+  mouseNDC.set(
+    ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    -((e.clientY - rect.top) / rect.height) * 2 + 1
+  );
+  raycaster.setFromCamera(mouseNDC, camera);
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const point = new THREE.Vector3();
   const hitGround = raycaster.ray.intersectPlane(groundPlane, point);
@@ -472,7 +535,6 @@ function closeCustomizePanel() {
   document.getElementById('customize-modal').classList.add('hidden');
   uiBlocking = wasBlockingBeforeOverlay;
 }
-document.getElementById('customize-title-btn').addEventListener('click', openCustomizePanel);
 document.getElementById('customize-hud-btn').addEventListener('click', () => {
   if (gameState !== 'playing' || (uiBlocking && !buildModeActive)) return;
   openCustomizePanel();

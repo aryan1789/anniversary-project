@@ -1665,31 +1665,33 @@ replayBtn.addEventListener('click', () => window.location.reload());
 // ===================== Loading screen =====================
 
 const loadingScreenEl = document.getElementById('loading-screen');
-const titleScreenEl = document.getElementById('title-screen');
+
+function initAudioOnce() {
+  if (audioCtx) return;
+  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+}
+window.addEventListener('keydown', initAudioOnce, { once: true });
+window.addEventListener('pointerdown', initAudioOnce, { once: true });
+
+function startGame() {
+  hudEl.classList.remove('hidden');
+  gameState = 'playing';
+  setRoom(buildRoom1);
+  setTimeout(() => showToast('WASD to move · Space to jump · drag to look around · E to interact', 5000), 500);
+}
 
 function hideLoadingScreen() {
   loadingScreenEl.classList.add('fade-out');
-  titleScreenEl.classList.remove('hidden');
-  setTimeout(() => loadingScreenEl.classList.add('hidden'), 550);
+  setTimeout(() => {
+    loadingScreenEl.classList.add('hidden');
+    startGame();
+  }, 550);
 }
 if (document.readyState === 'complete') {
   setTimeout(hideLoadingScreen, 900);
 } else {
   window.addEventListener('load', () => setTimeout(hideLoadingScreen, 900));
 }
-
-// ===================== Title screen =====================
-
-document.getElementById('title-heading').textContent = GAME_CONTENT.titleScreen.heading;
-document.getElementById('title-subheading').textContent = GAME_CONTENT.titleScreen.subheading;
-
-document.getElementById('play-btn').addEventListener('click', () => {
-  try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
-  document.getElementById('title-screen').classList.add('hidden');
-  hudEl.classList.remove('hidden');
-  gameState = 'playing';
-  setRoom(buildRoom1);
-});
 
 // ===================== Main loop =====================
 
