@@ -114,6 +114,7 @@ function rebuildPlacedItems() {
     const obj = def.build(entry.x, entry.z, entry.color);
     obj.userData.customIndex = idx;
     obj.scale.setScalar(entry.scale || 1);
+    obj.rotation.y = entry.rotationY || 0;
     // An invisible, generously-sized hit target — some props (flowers, gems) are
     // too small to reliably click on directly, but invisible meshes still raycast.
     const hitProxy = new THREE.Mesh(new THREE.SphereGeometry(0.7 / (entry.scale || 1), 6, 6), new THREE.MeshBasicMaterial());
@@ -127,11 +128,19 @@ function rebuildPlacedItems() {
   });
 }
 
-function addCustomItem(roomKey, itemId, x, z, color, scale) {
+function addCustomItem(roomKey, itemId, x, z, color, scale, rotationY) {
   if (!customItems[roomKey]) customItems[roomKey] = [];
-  customItems[roomKey].push({ itemId, x, z, color, scale: scale || 1 });
+  customItems[roomKey].push({ itemId, x, z, color, scale: scale || 1, rotationY: rotationY || 0 });
   persistCustomItems();
   rebuildPlacedItems();
+}
+
+function clearRoomCustomItems(roomKey) {
+  if (!customItems[roomKey] || !customItems[roomKey].length) { showToast('Nothing to clear here.'); return; }
+  customItems[roomKey] = [];
+  persistCustomItems();
+  rebuildPlacedItems();
+  showToast('Cleared everything you built in this room.');
 }
 
 function removeCustomItem(roomKey, idx) {
@@ -143,6 +152,7 @@ function removeCustomItem(roomKey, idx) {
 }
 
 function onRoomBuilt() {
+  hideGhost();
   rebuildPlacedItems();
 }
 
@@ -178,6 +188,7 @@ let buildModeActive = false;
 let selectedCatalogId = null;
 let selectedColor = null;
 let selectedScale = 1;
+let pendingRotation = 0;
 let wasBlockingBeforeOverlay = false;
 
 const buildToggleBtn = document.getElementById('build-toggle-btn');
@@ -192,6 +203,7 @@ CATALOG.forEach((def) => {
   btn.innerHTML = `<span class="catalog-icon">${def.icon}</span><span class="catalog-label">${def.label}</span>`;
   btn.addEventListener('click', () => {
     selectedCatalogId = def.id;
+    pendingRotation = 0;
     document.querySelectorAll('.catalog-item').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
   });
@@ -254,8 +266,15 @@ function exitBuildMode() {
   canvas.style.cursor = '';
   selectedCatalogId = null;
   rightDownTarget = null;
+  hideGhost();
   document.querySelectorAll('.catalog-item').forEach((b) => b.classList.remove('active'));
   document.getElementById('ai-idea-modal').classList.add('hidden');
+}
+const buildClearBtn = document.getElementById('build-clear-btn');
+if (buildClearBtn) {
+  buildClearBtn.addEventListener('click', () => {
+    if (currentRoom) clearRoomCustomItems(currentRoom.key);
+  });
 }
 buildToggleBtn.addEventListener('click', () => { buildModeActive ? exitBuildMode() : enterBuildMode(); });
 buildExitBtn.addEventListener('click', exitBuildMode);
@@ -302,6 +321,48 @@ function screenToGroundPoint(e) {
   return raycaster.ray.intersectPlane(groundPlane, point) ? point : null;
 }
 
+// ---- Placement ghost: a ring + direction arrow that follows the cursor
+// while an item is selected, so you can see where (and which way) it'll
+// land before clicking. Scroll wheel rotates it. ----
+let ghostGroup = null;
+function ensureGhost() {
+  if (ghostGroup) return ghostGroup;
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.5, 0.62, 28),
+    new THREE.MeshBasicMaterial({ color: 0xff6f91, transparent: true, opacity: 0.55, side: THREE.DoubleSide })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  const arrow = new THREE.Mesh(
+    new THREE.ConeGeometry(0.13, 0.32, 4),
+    new THREE.MeshBasicMaterial({ color: 0xff6f91, transparent: true, opacity: 0.8 })
+  );
+  arrow.rotation.z = -Math.PI / 2;
+  arrow.position.set(0, 0.03, 0.72);
+  ghostGroup = new THREE.Group();
+  ghostGroup.add(ring, arrow);
+  ghostGroup.renderOrder = 2;
+  return ghostGroup;
+}
+function updateGhost(e) {
+  if (!buildModeActive || !selectedCatalogId || !currentRoom) { hideGhost(); return; }
+  const point = screenToGroundPoint(e);
+  if (!point) return;
+  const ghost = ensureGhost();
+  if (!ghost.parent) scene.add(ghost);
+  const half = ROOM_HALF - 1.5;
+  ghost.position.set(Math.max(-half, Math.min(half, point.x)), 0.03, Math.max(-half, Math.min(11.5, point.z)));
+  ghost.rotation.y = pendingRotation;
+}
+function hideGhost() {
+  if (ghostGroup && ghostGroup.parent) ghostGroup.parent.remove(ghostGroup);
+}
+canvas.addEventListener('wheel', (e) => {
+  if (!buildModeActive || !selectedCatalogId) return;
+  e.preventDefault();
+  pendingRotation += (e.deltaY > 0 ? 1 : -1) * (Math.PI / 8);
+  if (ghostGroup) ghostGroup.rotation.y = pendingRotation;
+}, { passive: false });
+
 function pickPlacedItemAt(e) {
   if (!currentRoom || !placedMeshes.length) return null;
   const rect = canvas.getBoundingClientRect();
@@ -330,9 +391,11 @@ canvas.addEventListener('pointerdown', (e) => {
   pointerDownX = e.clientX; pointerDownY = e.clientY;
 });
 canvas.addEventListener('pointermove', (e) => {
+  updateGhost(e);
   if (!rightDownTarget) return;
   if (!rightDragged && Math.hypot(e.clientX - rightDownX, e.clientY - rightDownY) > 6) rightDragged = true;
   if (rightDragged) {
+    hideGhost();
     const point = screenToGroundPoint(e);
     if (point) {
       const half = ROOM_HALF - 1.5;
@@ -395,7 +458,7 @@ function handleBuildClick(e) {
   point.x = Math.max(-half, Math.min(half, point.x));
   point.z = Math.max(-half, Math.min(11.5, point.z));
   if (Math.abs(point.x) < 3.2 && point.z < -11.5) { showToast("That's too close to the portal!"); return; }
-  addCustomItem(currentRoom.key, selectedCatalogId, point.x, point.z, selectedColor, selectedScale);
+  addCustomItem(currentRoom.key, selectedCatalogId, point.x, point.z, selectedColor, selectedScale, pendingRotation);
   if (audioCtx) sfxPickup();
 }
 
