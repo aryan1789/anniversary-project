@@ -36,7 +36,7 @@
     --ink:#1d1130;
     --titlebar-a:#3d1f5c;
     --titlebar-b:#c77edc;
-    --accent:#ff4d79;
+    --accent:#e0169e;
     --card:#faf4ec;
     --pixel:"Anton","Arial Narrow",sans-serif;
     --hand:"Caveat","Comic Sans MS",cursive;
@@ -162,6 +162,25 @@
     font-weight:700;
     font-size:17px;color:#fff;
     text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  }
+
+  /* the rest of the desktop stays tucked away until the letter is opened,
+     so this feels like something to go through rather than a flat folder
+     of apps — Mail pulses softly as the obvious place to start */
+  .icon.locked{
+    opacity:0;
+    transform:translateY(10px) scale(.82);
+    pointer-events:none;
+    transition:opacity .55s ease, transform .55s cubic-bezier(.2,.8,.3,1.2);
+  }
+  .icon.revealed{ opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+  @keyframes icon-pulse-glow{
+    0%,100%{ filter:drop-shadow(1px 1px 0 rgba(0,0,0,.7)) drop-shadow(0 0 0 rgba(224,22,158,0)); }
+    50%{ filter:drop-shadow(1px 1px 0 rgba(0,0,0,.7)) drop-shadow(0 0 9px var(--accent)); }
+  }
+  .icon.pulse .glyph{ animation:icon-pulse-glow 1.9s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce){
+    .icon.pulse .glyph{ animation:none; }
   }
 
   /* a few scattered doodles pinned over the wallpaper, collage-style */
@@ -402,9 +421,9 @@
     <path class="stem" d="M40 116 C40 96 38 78 40 56" stroke="#3d8f5b" stroke-width="5" stroke-linecap="round"/>
     <path class="leaf" d="M40 92 C24 92 13 82 13 68 C27 71 37 79 40 92 Z" fill="#4caf6f"/>
     <g class="flower-group">
-      <path class="petal petal-l" d="M40 58 C28 58 21 45 25 30 C27 21 34 14 40 14 C40 14 40 40 40 58 Z" fill="#2f5bb5"/>
-      <path class="petal petal-r" d="M40 58 C52 58 59 45 55 30 C53 21 46 14 40 14 C40 14 40 40 40 58 Z" fill="#2f5bb5"/>
-      <path class="petal petal-c" d="M40 58 C32 58 27 44 30 28 C32 18 37 13 40 13 C43 13 48 18 50 28 C53 44 48 58 40 58 Z" fill="#5f8fe8"/>
+      <path class="petal petal-l" d="M40 58 C28 58 21 45 25 30 C27 21 34 14 40 14 C40 14 40 40 40 58 Z" fill="#c2168f"/>
+      <path class="petal petal-r" d="M40 58 C52 58 59 45 55 30 C53 21 46 14 40 14 C40 14 40 40 40 58 Z" fill="#c2168f"/>
+      <path class="petal petal-c" d="M40 58 C32 58 27 44 30 28 C32 18 37 13 40 13 C43 13 48 18 50 28 C53 44 48 58 40 58 Z" fill="#f17fd4"/>
     </g>
   </svg>
   <div class="label">waking up the desktop<span class="dots"></span></div>
@@ -412,25 +431,25 @@
 
 <div id="desktop">
   <div class="icons">
-    <button class="icon" data-open="win-mail" data-title="mail.exe">
+    <button class="icon pulse" data-open="win-mail" data-title="mail.exe" title="start here">
       <span class="glyph">
         <svg viewBox="0 0 32 32"><rect x="3" y="9" width="26" height="17" fill="#f4f1e4" stroke="#000" stroke-width="1.6"/><path d="M3,9 L16,19 L29,9" fill="none" stroke="#000" stroke-width="1.6"/></svg>
       </span>
       <span class="label">Mail</span>
     </button>
-    <button class="icon" data-open="win-music" data-title="music.exe">
+    <button class="icon locked" data-open="win-music" data-title="music.exe">
       <span class="glyph">
         <svg viewBox="0 0 32 32"><polygon points="6,13 12,13 18,7 18,25 12,19 6,19" fill="#f4c430" stroke="#000" stroke-width="1.4"/><path d="M21,12 Q25,16 21,20" stroke="#000" stroke-width="1.6" fill="none"/><path d="M24,9 Q30,16 24,23" stroke="#000" stroke-width="1.6" fill="none"/></svg>
       </span>
       <span class="label">Music</span>
     </button>
-    <button class="icon" data-open="win-photos" data-title="photos.exe">
+    <button class="icon locked" data-open="win-photos" data-title="photos.exe">
       <span class="glyph">
         <svg viewBox="0 0 32 32"><rect x="3" y="4" width="26" height="24" fill="#fff" stroke="#000" stroke-width="1.6"/><rect x="6" y="7" width="20" height="17" fill="#7ec8e3" stroke="#000" stroke-width="1"/><circle cx="21" cy="11" r="2.6" fill="#ffd23f" stroke="#000" stroke-width="1"/><polygon points="6,24 13,13 18,19 22,14 26,24" fill="#4a7a4a" stroke="#000" stroke-width="1.2"/></svg>
       </span>
       <span class="label">Photos</span>
     </button>
-    <button class="icon" data-open="win-weblox" data-title="weblox.exe">
+    <button class="icon locked" data-open="win-weblox" data-title="weblox.exe">
       <span class="glyph">
         <svg viewBox="0 0 32 32">
           <polygon points="16,4 28,10 16,16 4,10" fill="#8fd3f4" stroke="#000" stroke-width="1.4"/>
@@ -451,6 +470,19 @@
   <svg class="doodle" style="top:4%; right:12%; width:40px; transform:rotate(12deg);" viewBox="0 0 24 24" fill="none"><path d="M12 20c-4-3-9-6.5-9-11A5 5 0 0 1 12 6a5 5 0 0 1 9 3c0 4.5-5 8-9 11Z" stroke="#fff" stroke-width="1.6"/></svg>
   <svg class="doodle" style="top:48%; right:6%; width:30px; transform:rotate(-10deg);" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.2 6.8H21l-5.6 4.1 2.1 6.8L12 15.8 6.5 19.7l2.1-6.8L3 8.8h6.8Z" stroke="#fff" stroke-width="1.5"/></svg>
   <svg class="doodle" style="bottom:16%; left:46%; width:46px; transform:rotate(4deg);" viewBox="0 0 60 16" fill="none"><path d="M2 10 Q10 2 18 10 T34 10 T50 10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+  <svg class="doodle" style="bottom:10%; right:32%; width:36px; transform:rotate(-6deg);" viewBox="0 0 24 24" fill="none">
+    <g stroke="#fff" stroke-width="1.3">
+      <ellipse cx="12" cy="7" rx="3" ry="5"/>
+      <ellipse cx="12" cy="17" rx="3" ry="5"/>
+      <ellipse cx="7" cy="12" rx="5" ry="3"/>
+      <ellipse cx="17" cy="12" rx="5" ry="3"/>
+      <ellipse cx="8.5" cy="8.5" rx="4" ry="2.3" transform="rotate(-45 8.5 8.5)"/>
+      <ellipse cx="15.5" cy="15.5" rx="4" ry="2.3" transform="rotate(-45 15.5 15.5)"/>
+      <ellipse cx="15.5" cy="8.5" rx="4" ry="2.3" transform="rotate(45 15.5 8.5)"/>
+      <ellipse cx="8.5" cy="15.5" rx="4" ry="2.3" transform="rotate(45 8.5 15.5)"/>
+      <circle cx="12" cy="12" r="1.8" fill="#fff" stroke="none"/>
+    </g>
+  </svg>
 
   <section class="win bevel-out" id="win-mail" style="top:8%; left:10%; --tilt:-1.6deg; --tape:#ffb3d1;" data-title="mail.exe">
     <div class="titlebar"><span>mail.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
@@ -795,6 +827,23 @@
 
   loadTrack(0, false);
 
+  // Ambient background music: the whole point is that it's playing
+  // underneath everything, not an app she has to go open — it starts on
+  // the first click or keystroke anywhere (browsers block audio before
+  // that), which in practice means the moment she touches the password
+  // field. music.exe still exists if she wants to see what's on or skip
+  // a track, it's just not the thing that turns the music on.
+  var ambientStarted = false;
+  function startAmbientMusic(){
+    if (ambientStarted) return;
+    ambientStarted = true;
+    if (trackReady) { setPlaying(true); return; }
+    var onReady = function(){ setPlaying(true); audio.removeEventListener("loadedmetadata", onReady); };
+    audio.addEventListener("loadedmetadata", onReady);
+  }
+  document.addEventListener("pointerdown", startAmbientMusic, { once: true });
+  document.addEventListener("keydown", startAmbientMusic, { once: true });
+
   function updateVolIcon(){
     var v = audio.muted ? 0 : audio.volume;
     volIconEl.textContent = v === 0 ? "🔇" : v < 0.5 ? "🔉" : "🔊";
@@ -833,8 +882,6 @@
       return;
     }
     document.getElementById("mail-lock").hidden = true;
-    openWin(document.getElementById("win-music"));
-    setPlaying(true);
     startMontage();
   }
 
@@ -846,6 +893,19 @@
     sign.className = "sign";
     sign.textContent = "— Aryan";
     letterEl.appendChild(sign);
+
+    // the rest of the desktop reveals itself once the letter is read,
+    // instead of being there from the start
+    document.querySelector('.icon[data-open="win-mail"]').classList.remove("pulse");
+    var lockedIcons = Array.prototype.slice.call(document.querySelectorAll(".icon.locked"));
+    lockedIcons.forEach(function(el, i){
+      setTimeout(function(){ el.classList.remove("locked"); el.classList.add("revealed"); }, 350 + i * 200);
+    });
+    setTimeout(function(){
+      toast.textContent = "there's more — have a look around ✨";
+      toast.classList.add("show");
+      setTimeout(function(){ toast.classList.remove("show"); }, 2600);
+    }, 350 + lockedIcons.length * 200 + 200);
   }
 
   var montageTimer = null;
