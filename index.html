@@ -57,8 +57,7 @@
       <strong>🛠️ Build Mode</strong>
       <button id="build-exit-btn" class="chunky-btn small secondary">Done</button>
     </div>
-    <p class="build-hint">Click an item below, then click the ground to place it — scroll your mouse wheel to rotate it first. Click any item already placed to select it, then move, rotate or delete it below.</p>
-    <div id="build-selected-toolbar" class="build-selected-toolbar hidden"></div>
+    <p class="build-hint">Click an item below, then click the ground to place it — scroll your mouse wheel to rotate it first. You can click anything you've placed, anytime (even outside Build Mode), to move, rotate or delete it.</p>
     <div id="build-catalog" class="build-catalog"></div>
     <div class="build-options-row">
       <div class="build-options-col">
@@ -199,6 +198,8 @@
 </div>
 
 <div id="toast" class="hidden"></div>
+
+<div id="item-context-menu" class="hidden"></div>
 
 <div id="finale-overlay" class="overlay hidden">
   <canvas id="confetti-canvas"></canvas>

@@ -161,6 +161,7 @@ function onRoomBuilt() {
 function updateCustomItems(dt, t) {
   if (selectedPlacedItem && selectionRing) {
     selectionRing.position.set(selectedPlacedItem.position.x, 0.03, selectedPlacedItem.position.z);
+    updateItemContextMenuPosition();
   }
   animatedItems.forEach((a) => {
     const o = a.object;
@@ -273,7 +274,6 @@ function exitBuildMode() {
   selectedCatalogId = null;
   rightDownTarget = null;
   leftDownTarget = null;
-  selectPlacedItem(null);
   hideGhost();
   document.querySelectorAll('.catalog-item').forEach((b) => b.classList.remove('active'));
   document.getElementById('ai-idea-modal').classList.add('hidden');
@@ -382,7 +382,19 @@ canvas.addEventListener('wheel', (e) => {
 // mouse button moves it; right-click still works as a quick shortcut. ----
 let selectedPlacedItem = null;
 let selectionRing = null;
-const selectedToolbarEl = document.getElementById('build-selected-toolbar');
+const itemContextMenuEl = document.getElementById('item-context-menu');
+
+// Selecting, moving and deleting a placed item works anytime during
+// gameplay, not just with the build tray open — build mode is only
+// needed to pick something new from the catalog to place.
+function selectionAllowed() {
+  return gameState === 'playing' && (buildModeActive ? !selectedCatalogId : !uiBlocking);
+}
+// Right-click never competes with placing a new item (that's always left-click),
+// so it stays available even while a catalog item is selected for placing.
+function rightClickAllowed() {
+  return gameState === 'playing' && (buildModeActive || !uiBlocking);
+}
 
 function ensureSelectionRing() {
   if (selectionRing) return selectionRing;
@@ -400,25 +412,39 @@ function selectPlacedItem(obj) {
   selectedPlacedItem = obj;
   if (!obj || !currentRoom) {
     if (selectionRing && selectionRing.parent) selectionRing.parent.remove(selectionRing);
-    selectedToolbarEl.classList.add('hidden');
-    selectedToolbarEl.innerHTML = '';
+    itemContextMenuEl.classList.add('hidden');
+    itemContextMenuEl.innerHTML = '';
     return;
   }
-  const idx = obj.userData.customIndex;
-  const entry = (customItems[currentRoom.key] || [])[idx];
-  const def = entry && CATALOG_BY_ID[entry.itemId];
   const ring = ensureSelectionRing();
   if (!ring.parent) scene.add(ring);
   ring.position.set(obj.position.x, 0.03, obj.position.z);
-  selectedToolbarEl.innerHTML =
-    `<span class="selected-item-label">${def ? def.icon : '📍'} ${def ? def.label : 'Item'} selected — drag it to move</span>` +
-    `<div class="selected-item-actions">` +
-    `<button id="selected-rotate-btn" class="chunky-btn small secondary">↺ Rotate</button>` +
-    `<button id="selected-delete-btn" class="chunky-btn small danger">🗑️ Delete</button>` +
-    `</div>`;
-  selectedToolbarEl.classList.remove('hidden');
+  itemContextMenuEl.innerHTML =
+    '<button id="selected-rotate-btn" class="item-menu-btn" title="Rotate">↺</button>' +
+    '<button id="selected-delete-btn" class="item-menu-btn danger" title="Delete">🗑️</button>';
+  itemContextMenuEl.classList.remove('hidden');
   document.getElementById('selected-rotate-btn').addEventListener('click', rotateSelectedItem);
   document.getElementById('selected-delete-btn').addEventListener('click', deleteSelectedItem);
+  updateItemContextMenuPosition();
+  if (!buildModeActive) {
+    try {
+      if (!localStorage.getItem('ah_item_select_hint_shown')) {
+        showToast('Drag it to move, or use the buttons above to rotate or delete it.', 4000);
+        localStorage.setItem('ah_item_select_hint_shown', '1');
+      }
+    } catch (e) { /* ignore */ }
+  }
+}
+
+function updateItemContextMenuPosition() {
+  if (!selectedPlacedItem || itemContextMenuEl.classList.contains('hidden')) return;
+  const pos = selectedPlacedItem.position.clone();
+  pos.y += 1.6;
+  pos.project(camera);
+  if (pos.z > 1) return; // behind the camera — leave the menu where it last was
+  const rect = canvas.getBoundingClientRect();
+  itemContextMenuEl.style.left = (rect.left + (pos.x * 0.5 + 0.5) * rect.width) + 'px';
+  itemContextMenuEl.style.top = (rect.top + (-pos.y * 0.5 + 0.5) * rect.height) + 'px';
 }
 
 function reselectByIndex(idx) {
@@ -459,19 +485,21 @@ function pickPlacedItemAt(e) {
   return obj || null;
 }
 
-canvas.addEventListener('contextmenu', (e) => { if (buildModeActive) e.preventDefault(); });
+canvas.addEventListener('contextmenu', (e) => { if (rightClickAllowed()) e.preventDefault(); });
 
 canvas.addEventListener('pointerdown', (e) => {
   if (e.button === 2) {
     rightDownX = e.clientX; rightDownY = e.clientY;
     rightDragged = false;
-    rightDownTarget = buildModeActive ? pickPlacedItemAt(e) : null;
+    rightDownTarget = rightClickAllowed() ? pickPlacedItemAt(e) : null;
+    if (rightDownTarget) dragging = false; // don't let the camera spin while dragging an item
     return;
   }
   if (e.button !== 0) return;
   pointerDownX = e.clientX; pointerDownY = e.clientY;
   leftDragged = false;
-  leftDownTarget = (buildModeActive && !selectedCatalogId) ? pickPlacedItemAt(e) : null;
+  leftDownTarget = selectionAllowed() ? pickPlacedItemAt(e) : null;
+  if (leftDownTarget) dragging = false;
 });
 canvas.addEventListener('pointermove', (e) => {
   updateGhost(e);
@@ -524,9 +552,9 @@ canvas.addEventListener('pointerup', (e) => {
     return;
   }
   if (e.button !== 0) return;
-  if (!buildModeActive) return;
+  if (gameState !== 'playing') return;
   const dragDist = Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY);
-  if (selectedCatalogId) {
+  if (buildModeActive && selectedCatalogId) {
     if (dragDist > 6) return; // was a look-drag, not a click
     handleBuildClick(e);
     leftDownTarget = null;
@@ -547,7 +575,7 @@ canvas.addEventListener('pointerup', (e) => {
     } else {
       selectPlacedItem(leftDownTarget);
     }
-  } else if (dragDist <= 6) {
+  } else if (dragDist <= 6 && selectionAllowed()) {
     selectPlacedItem(null); // clicked empty ground — deselect
   }
   leftDownTarget = null;
