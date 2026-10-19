@@ -22,15 +22,17 @@
 <title>Heartfelt Delivery</title>
 <style>
   :root{
-    --face:#c0c0c0;
-    --face-light:#dfdfdf;
+    /* SOUR-era palette: washed purple/lavender chrome, a grainy Y2K-diary
+       feel instead of a plain beige PC, with a hot-pink accent pop. */
+    --face:#cfc2e8;
+    --face-light:#ece3fb;
     --hi:#ffffff;
-    --lo:#808080;
-    --lo-2:#404040;
-    --ink:#0a0a0a;
-    --titlebar-a:#000080;
-    --titlebar-b:#1084d0;
-    --accent:#f4b942;
+    --lo:#8a76b0;
+    --lo-2:#4a3566;
+    --ink:#1d1130;
+    --titlebar-a:#3d1f5c;
+    --titlebar-b:#c77edc;
+    --accent:#ff4d79;
     --pixel:"Silkscreen","Courier New",monospace;
     --mono:"Space Mono","Courier New",monospace;
   }
@@ -112,10 +114,19 @@
   #desktop{
     position:fixed;inset:0;
     background-image:
-      linear-gradient(rgba(0,0,0,.18), rgba(0,0,0,.35)),
+      linear-gradient(rgba(61,31,92,.22), rgba(26,12,46,.42)),
       var(--wallpaper);
     background-size:cover;
     background-position:center;
+  }
+  /* a soft film-grain layer over the wallpaper for a lo-fi diary feel */
+  #desktop::after{
+    content:"";
+    position:absolute;inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity:.05;
+    mix-blend-mode:overlay;
+    pointer-events:none;
   }
 
   .icons{
@@ -290,7 +301,7 @@
   }
   .taskbar-btn.active{
     border-color:var(--lo-2) var(--hi) var(--hi) var(--lo-2);
-    box-shadow: inset 1px 1px 0 var(--lo), inset -1px -1px 0 var(--face-light);
+    box-shadow: inset 1px 1px 0 var(--lo), inset -1px -1px 0 var(--face-light), inset 0 -2px 0 var(--accent);
   }
   .clock{
     font-family:var(--mono);font-size:12px;padding:6px 10px;height:30px;

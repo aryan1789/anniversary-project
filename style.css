@@ -244,6 +244,9 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   padding: 8px 18px;
   font-weight: 700;
   font-family: 'Baloo 2', 'Trebuchet MS', 'Comic Sans MS', sans-serif;
+  max-width: 260px;
+  text-align: right;
+  font-size: 0.92rem;
 }
 
 #interact-prompt {

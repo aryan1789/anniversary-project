@@ -769,6 +769,7 @@ const JUMP_SPEED = 9.2;
 let velocityY = 0;
 let grounded = true;
 let squashT = 0;
+let footstepT = 0;
 
 const SHADOW_TEX = makeGlowTexture('rgba(20,16,30,0.5)', 'rgba(20,16,30,0)');
 const playerShadow = new THREE.Mesh(
@@ -871,6 +872,12 @@ function updatePlayer(dt) {
   }
   if (!activeEmote) animateWalk(moving && grounded, dt);
   if (!activeEmote) updateJump(dt);
+  if (moving && grounded) {
+    footstepT += dt;
+    if (footstepT > 0.34) { footstepT = 0; sfxFootstep(); }
+  } else {
+    footstepT = 0.15;
+  }
   if (!activeEmote && grounded && !moving) {
     idleBob(dt);
   } else {
@@ -1044,8 +1051,10 @@ function openRiddle(content, onCorrect) {
 // ===================== Audio (tiny WebAudio blips) =====================
 
 let audioCtx = null;
+let audioMuted = (function () { try { return localStorage.getItem('ah_audio_muted') === '1'; } catch (e) { return false; } })();
+
 function beep(freq, dur = 0.15, type = 'sine', vol = 0.15, delay = 0) {
-  if (!audioCtx) return;
+  if (!audioCtx || audioMuted) return;
   const t0 = audioCtx.currentTime + delay;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
@@ -1062,6 +1071,53 @@ function sfxCorrect() { beep(520, 0.12, 'sine', 0.15); beep(660, 0.12, 'sine', 0
 function sfxWrong() { beep(180, 0.2, 'sawtooth', 0.08); }
 function sfxOpen() { beep(300, 0.2, 'triangle', 0.12); beep(500, 0.25, 'triangle', 0.12, 0.15); beep(760, 0.35, 'triangle', 0.14, 0.3); }
 function sfxUnlock() { beep(440, 0.15, 'sine', 0.12); beep(660, 0.2, 'sine', 0.12, 0.12); }
+function sfxFootstep() { beep(130 + Math.random() * 35, 0.065, 'sine', 0.045); }
+function sfxFinale() {
+  beep(523.25, 0.25, 'triangle', 0.16);
+  beep(659.25, 0.25, 'triangle', 0.16, 0.18);
+  beep(783.99, 0.3, 'triangle', 0.18, 0.36);
+  beep(1046.5, 0.5, 'triangle', 0.2, 0.56);
+}
+
+// ---- Soft ambient background pad — a few slow, randomized notes on a loop,
+// built from oscillators like the sfx above rather than an audio file. ----
+let ambientMaster = null;
+let ambientTimer = null;
+const AMBIENT_SCALE = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25]; // C D E G A C
+
+function playAmbientNote() {
+  if (!audioCtx || !ambientMaster) return;
+  const base = AMBIENT_SCALE[Math.floor(Math.random() * AMBIENT_SCALE.length)];
+  const freq = base * (Math.random() < 0.4 ? 0.5 : 1);
+  const t0 = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(1, t0 + 1.3);
+  g.gain.linearRampToValueAtTime(0, t0 + 3.8);
+  osc.connect(g).connect(ambientMaster);
+  osc.start(t0);
+  osc.stop(t0 + 3.9);
+}
+function startAmbientMusic() {
+  if (!audioCtx || ambientMaster) return;
+  ambientMaster = audioCtx.createGain();
+  ambientMaster.gain.value = audioMuted ? 0 : 0.055;
+  ambientMaster.connect(audioCtx.destination);
+  playAmbientNote();
+  ambientTimer = setInterval(playAmbientNote, 2300);
+}
+function setAudioMuted(muted) {
+  audioMuted = muted;
+  try { localStorage.setItem('ah_audio_muted', muted ? '1' : '0'); } catch (e) { /* ignore */ }
+  if (ambientMaster && audioCtx) {
+    ambientMaster.gain.linearRampToValueAtTime(muted ? 0 : 0.055, audioCtx.currentTime + 0.3);
+  }
+  const btn = document.getElementById('mute-toggle-btn');
+  if (btn) btn.textContent = muted ? '🔇' : '🔊';
+}
 
 // ===================== Confetti =====================
 
@@ -1621,6 +1677,26 @@ function buildRoom4() {
 
 // ===================== Room switching / finale / title =====================
 
+// ---- Progress persistence: remember which room to resume into ----
+const ROOM_FACTORIES = { room1: buildRoom1, room2: buildRoom2, room3: buildRoom3, room4: buildRoom4 };
+function saveProgress(roomKey) {
+  try { localStorage.setItem('ah_progress_v1', roomKey); } catch (e) { /* ignore */ }
+}
+function loadProgress() {
+  try { return localStorage.getItem('ah_progress_v1'); } catch (e) { return null; }
+}
+function clearProgress() {
+  try { localStorage.removeItem('ah_progress_v1'); } catch (e) { /* ignore */ }
+}
+
+// ---- A one-line objective shown in the HUD for rooms without their own
+// dynamic counter (room3 fills the same element with a live tally instead). ----
+const ROOM_OBJECTIVES = {
+  room1: 'Look around for something hidden nearby...',
+  room2: 'Find the signpost and solve its riddle',
+  room4: 'Open the treasure chest',
+};
+
 function setRoom(factory) {
   fadeEl.classList.add('fade-in');
   setTimeout(() => {
@@ -1633,11 +1709,15 @@ function setRoom(factory) {
     velocityY = 0;
     grounded = true;
     currentRoom = built;
+    saveProgress(built.key);
     if (typeof onRoomBuilt === 'function') onRoomBuilt(built);
     roomLabelEl.textContent = built.name;
     milestoneCounterEl.classList.add('hidden');
-    if (built.name === GAME_CONTENT.room3.name) {
+    if (built.key === 'room3') {
       milestoneCounterEl.textContent = `Memories: 0/${built.interactables.length}`;
+      milestoneCounterEl.classList.remove('hidden');
+    } else if (ROOM_OBJECTIVES[built.key]) {
+      milestoneCounterEl.textContent = ROOM_OBJECTIVES[built.key];
       milestoneCounterEl.classList.remove('hidden');
     }
     setTimeout(() => fadeEl.classList.remove('fade-in'), 50);
@@ -1659,8 +1739,10 @@ function showFinale() {
   finaleOverlayEl.classList.remove('hidden');
   hudEl.classList.add('hidden');
   startConfetti();
+  sfxFinale();
+  clearProgress();
 }
-replayBtn.addEventListener('click', () => window.location.reload());
+replayBtn.addEventListener('click', () => { clearProgress(); window.location.reload(); });
 
 // ===================== Loading screen =====================
 
@@ -1669,15 +1751,26 @@ const loadingScreenEl = document.getElementById('loading-screen');
 function initAudioOnce() {
   if (audioCtx) return;
   try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+  startAmbientMusic();
 }
 window.addEventListener('keydown', initAudioOnce, { once: true });
 window.addEventListener('pointerdown', initAudioOnce, { once: true });
 
+const muteToggleBtn = document.getElementById('mute-toggle-btn');
+muteToggleBtn.textContent = audioMuted ? '🔇' : '🔊';
+muteToggleBtn.addEventListener('click', () => setAudioMuted(!audioMuted));
+
 function startGame() {
   hudEl.classList.remove('hidden');
   gameState = 'playing';
-  setRoom(buildRoom1);
-  setTimeout(() => showToast('WASD to move · Space to jump · drag to look around · E to interact', 5000), 500);
+  const savedKey = loadProgress();
+  const factory = (savedKey && ROOM_FACTORIES[savedKey]) || buildRoom1;
+  setRoom(factory);
+  if (factory === buildRoom1) {
+    setTimeout(() => showToast('WASD to move · Space to jump · drag to look around · E to interact', 5000), 500);
+  } else {
+    setTimeout(() => showToast('Welcome back — picking up right where you left off.', 3500), 500);
+  }
 }
 
 function hideLoadingScreen() {

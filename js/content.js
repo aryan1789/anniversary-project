@@ -9,20 +9,14 @@
 const GAME_CONTENT = {
 
   // ---- Names & basics ----
-  playerName: "TODO_YOUR_NAME",
-  girlfriendName: "TODO_HER_NAME",
+  playerName: "Aryan",
+  girlfriendName: "Riddhi",
   nickname: "TODO_A_NICKNAME_YOU_CALL_HER", // used in a few lines of dialogue
 
   // Character look — pick any hex colors
   characterShirtColor: "#ff6f91",
   characterHairColor: "#3b2314",
   characterSkinColor: "#f2c9a0",
-
-  // ---- Title screen ----
-  titleScreen: {
-    heading: "A Treasure Hunt For TODO_HER_NAME",
-    subheading: "One year of us, turned into a little adventure.",
-  },
 
   // ---- Room 1: The Meeting Grounds ----
   room1: {
