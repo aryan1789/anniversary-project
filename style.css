@@ -479,6 +479,18 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   line-height: 1;
 }
 #build-ai-btn { width: 100%; }
+.build-selected-toolbar {
+  background: #fff;
+  border: 3px solid var(--green);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin: 8px 0;
+}
+.selected-item-label { display: block; font-size: 0.82rem; font-weight: 700; margin-bottom: 8px; }
+.selected-item-actions { display: flex; gap: 8px; }
+.selected-item-actions .chunky-btn { flex: 1; padding: 6px 10px; font-size: 0.82rem; }
+.chunky-btn.danger { background: var(--pink-dark); color: #fff; box-shadow: 0 6px 0 #a83f5b; }
+.chunky-btn.danger:active { box-shadow: 0 0 0 #a83f5b; }
 .build-options-row {
   display: flex;
   gap: 18px;
@@ -498,6 +510,15 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   cursor: pointer;
 }
 .scale-btn.active { background: var(--green); box-shadow: 0 3px 0 #4a9e68; }
+
+/* ---------- Help panel ---------- */
+.help-panel { max-width: 460px; max-height: 84vh; overflow-y: auto; text-align: left; }
+.help-panel h2 { text-align: center; margin: 0 0 14px; }
+.help-section { margin-bottom: 14px; }
+.help-section strong { display: block; color: var(--pink-dark); font-family: 'Baloo 2', 'Trebuchet MS', 'Comic Sans MS', sans-serif; margin-bottom: 4px; }
+.help-section p { margin: 0; font-size: 0.95rem; line-height: 1.45; }
+.help-panel .build-hint { margin-bottom: 16px; }
+.help-panel .chunky-btn { display: block; margin: 0 auto; }
 
 /* ---------- Customize panel ---------- */
 .customize-panel { max-width: 460px; max-height: 84vh; overflow-y: auto; text-align: left; }

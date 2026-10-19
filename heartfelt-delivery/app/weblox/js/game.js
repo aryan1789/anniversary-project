@@ -1692,7 +1692,6 @@ function clearProgress() {
 // ---- A one-line objective shown in the HUD for rooms without their own
 // dynamic counter (room3 fills the same element with a live tally instead). ----
 const ROOM_OBJECTIVES = {
-  room1: 'Look around for something hidden nearby...',
   room2: 'Find the signpost and solve its riddle',
   room4: 'Open the treasure chest',
 };
@@ -1759,6 +1758,21 @@ window.addEventListener('pointerdown', initAudioOnce, { once: true });
 const muteToggleBtn = document.getElementById('mute-toggle-btn');
 muteToggleBtn.textContent = audioMuted ? '🔇' : '🔊';
 muteToggleBtn.addEventListener('click', () => setAudioMuted(!audioMuted));
+
+const helpToggleBtn = document.getElementById('help-toggle-btn');
+const helpModalEl = document.getElementById('help-modal');
+const helpCloseBtn = document.getElementById('help-close-btn');
+let helpWasBlocking = false;
+helpToggleBtn.addEventListener('click', () => {
+  if (gameState !== 'playing' || (uiBlocking && helpModalEl.classList.contains('hidden'))) return;
+  helpWasBlocking = uiBlocking;
+  uiBlocking = true;
+  helpModalEl.classList.remove('hidden');
+});
+helpCloseBtn.addEventListener('click', () => {
+  helpModalEl.classList.add('hidden');
+  uiBlocking = helpWasBlocking;
+});
 
 function startGame() {
   hudEl.classList.remove('hidden');

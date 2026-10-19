@@ -137,6 +137,7 @@ function addCustomItem(roomKey, itemId, x, z, color, scale, rotationY) {
 
 function clearRoomCustomItems(roomKey) {
   if (!customItems[roomKey] || !customItems[roomKey].length) { showToast('Nothing to clear here.'); return; }
+  selectPlacedItem(null);
   customItems[roomKey] = [];
   persistCustomItems();
   rebuildPlacedItems();
@@ -153,10 +154,14 @@ function removeCustomItem(roomKey, idx) {
 
 function onRoomBuilt() {
   hideGhost();
+  selectPlacedItem(null);
   rebuildPlacedItems();
 }
 
 function updateCustomItems(dt, t) {
+  if (selectedPlacedItem && selectionRing) {
+    selectionRing.position.set(selectedPlacedItem.position.x, 0.03, selectedPlacedItem.position.z);
+  }
   animatedItems.forEach((a) => {
     const o = a.object;
     if (a.itemId === 'gem') {
@@ -204,6 +209,7 @@ CATALOG.forEach((def) => {
   btn.addEventListener('click', () => {
     selectedCatalogId = def.id;
     pendingRotation = 0;
+    selectPlacedItem(null);
     document.querySelectorAll('.catalog-item').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
   });
@@ -266,6 +272,8 @@ function exitBuildMode() {
   canvas.style.cursor = '';
   selectedCatalogId = null;
   rightDownTarget = null;
+  leftDownTarget = null;
+  selectPlacedItem(null);
   hideGhost();
   document.querySelectorAll('.catalog-item').forEach((b) => b.classList.remove('active'));
   document.getElementById('ai-idea-modal').classList.add('hidden');
@@ -308,6 +316,11 @@ let pointerDownX = 0, pointerDownY = 0;
 let rightDownTarget = null;
 let rightDownX = 0, rightDownY = 0;
 let rightDragged = false;
+
+// Left-click a placed item (with nothing chosen from the catalog) to select
+// it instead of placing something new; drag while selected to move it.
+let leftDownTarget = null;
+let leftDragged = false;
 
 function screenToGroundPoint(e) {
   const rect = canvas.getBoundingClientRect();
@@ -363,6 +376,74 @@ canvas.addEventListener('wheel', (e) => {
   if (ghostGroup) ghostGroup.rotation.y = pendingRotation;
 }, { passive: false });
 
+// ---- Selecting a placed item: click it (with no catalog item chosen) to
+// select it, which shows a green ring under it plus a small toolbar with
+// move / rotate / delete controls. Dragging a selected item with the left
+// mouse button moves it; right-click still works as a quick shortcut. ----
+let selectedPlacedItem = null;
+let selectionRing = null;
+const selectedToolbarEl = document.getElementById('build-selected-toolbar');
+
+function ensureSelectionRing() {
+  if (selectionRing) return selectionRing;
+  const ring = new THREE.Mesh(
+    new THREE.RingGeometry(0.55, 0.7, 28),
+    new THREE.MeshBasicMaterial({ color: 0x6bcf8f, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.renderOrder = 2;
+  selectionRing = ring;
+  return ring;
+}
+
+function selectPlacedItem(obj) {
+  selectedPlacedItem = obj;
+  if (!obj || !currentRoom) {
+    if (selectionRing && selectionRing.parent) selectionRing.parent.remove(selectionRing);
+    selectedToolbarEl.classList.add('hidden');
+    selectedToolbarEl.innerHTML = '';
+    return;
+  }
+  const idx = obj.userData.customIndex;
+  const entry = (customItems[currentRoom.key] || [])[idx];
+  const def = entry && CATALOG_BY_ID[entry.itemId];
+  const ring = ensureSelectionRing();
+  if (!ring.parent) scene.add(ring);
+  ring.position.set(obj.position.x, 0.03, obj.position.z);
+  selectedToolbarEl.innerHTML =
+    `<span class="selected-item-label">${def ? def.icon : '📍'} ${def ? def.label : 'Item'} selected — drag it to move</span>` +
+    `<div class="selected-item-actions">` +
+    `<button id="selected-rotate-btn" class="chunky-btn small secondary">↺ Rotate</button>` +
+    `<button id="selected-delete-btn" class="chunky-btn small danger">🗑️ Delete</button>` +
+    `</div>`;
+  selectedToolbarEl.classList.remove('hidden');
+  document.getElementById('selected-rotate-btn').addEventListener('click', rotateSelectedItem);
+  document.getElementById('selected-delete-btn').addEventListener('click', deleteSelectedItem);
+}
+
+function reselectByIndex(idx) {
+  const obj = placedMeshes.find((m) => m.userData.customIndex === idx);
+  selectPlacedItem(obj || null);
+}
+
+function rotateSelectedItem() {
+  if (!selectedPlacedItem || !currentRoom) return;
+  const idx = selectedPlacedItem.userData.customIndex;
+  const list = customItems[currentRoom.key];
+  if (!list || !list[idx]) return;
+  list[idx].rotationY = (list[idx].rotationY || 0) + Math.PI / 8;
+  persistCustomItems();
+  rebuildPlacedItems();
+  reselectByIndex(idx);
+}
+
+function deleteSelectedItem() {
+  if (!selectedPlacedItem || !currentRoom) return;
+  const idx = selectedPlacedItem.userData.customIndex;
+  selectPlacedItem(null);
+  removeCustomItem(currentRoom.key, idx);
+}
+
 function pickPlacedItemAt(e) {
   if (!currentRoom || !placedMeshes.length) return null;
   const rect = canvas.getBoundingClientRect();
@@ -389,18 +470,35 @@ canvas.addEventListener('pointerdown', (e) => {
   }
   if (e.button !== 0) return;
   pointerDownX = e.clientX; pointerDownY = e.clientY;
+  leftDragged = false;
+  leftDownTarget = (buildModeActive && !selectedCatalogId) ? pickPlacedItemAt(e) : null;
 });
 canvas.addEventListener('pointermove', (e) => {
   updateGhost(e);
-  if (!rightDownTarget) return;
-  if (!rightDragged && Math.hypot(e.clientX - rightDownX, e.clientY - rightDownY) > 6) rightDragged = true;
-  if (rightDragged) {
-    hideGhost();
-    const point = screenToGroundPoint(e);
-    if (point) {
-      const half = ROOM_HALF - 1.5;
-      rightDownTarget.position.x = Math.max(-half, Math.min(half, point.x));
-      rightDownTarget.position.z = Math.max(-half, Math.min(11.5, point.z));
+  if (rightDownTarget) {
+    if (!rightDragged && Math.hypot(e.clientX - rightDownX, e.clientY - rightDownY) > 6) rightDragged = true;
+    if (rightDragged) {
+      hideGhost();
+      const point = screenToGroundPoint(e);
+      if (point) {
+        const half = ROOM_HALF - 1.5;
+        rightDownTarget.position.x = Math.max(-half, Math.min(half, point.x));
+        rightDownTarget.position.z = Math.max(-half, Math.min(11.5, point.z));
+      }
+    }
+    return;
+  }
+  if (leftDownTarget) {
+    if (!leftDragged && Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 6) leftDragged = true;
+    if (leftDragged) {
+      hideGhost();
+      const point = screenToGroundPoint(e);
+      if (point) {
+        const half = ROOM_HALF - 1.5;
+        leftDownTarget.position.x = Math.max(-half, Math.min(half, point.x));
+        leftDownTarget.position.z = Math.max(-half, Math.min(11.5, point.z));
+        if (selectionRing) selectionRing.position.set(leftDownTarget.position.x, 0.03, leftDownTarget.position.z);
+      }
     }
   }
 });
@@ -415,9 +513,11 @@ canvas.addEventListener('pointerup', (e) => {
         list[idx].z = rightDownTarget.position.z;
         persistCustomItems();
         rebuildPlacedItems();
+        if (selectedPlacedItem && selectedPlacedItem.userData.customIndex === idx) reselectByIndex(idx);
         showToast('Moved.');
       }
     } else {
+      if (selectedPlacedItem && selectedPlacedItem.userData.customIndex === idx) selectPlacedItem(null);
       removeCustomItem(currentRoom.key, idx);
     }
     rightDownTarget = null;
@@ -425,8 +525,32 @@ canvas.addEventListener('pointerup', (e) => {
   }
   if (e.button !== 0) return;
   if (!buildModeActive) return;
-  if (Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 6) return; // was a look-drag, not a click
-  handleBuildClick(e);
+  const dragDist = Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY);
+  if (selectedCatalogId) {
+    if (dragDist > 6) return; // was a look-drag, not a click
+    handleBuildClick(e);
+    leftDownTarget = null;
+    return;
+  }
+  if (leftDownTarget) {
+    const idx = leftDownTarget.userData.customIndex;
+    const list = currentRoom && customItems[currentRoom.key];
+    if (leftDragged) {
+      if (list && list[idx]) {
+        list[idx].x = leftDownTarget.position.x;
+        list[idx].z = leftDownTarget.position.z;
+        persistCustomItems();
+        rebuildPlacedItems();
+        reselectByIndex(idx);
+        showToast('Moved.');
+      }
+    } else {
+      selectPlacedItem(leftDownTarget);
+    }
+  } else if (dragDist <= 6) {
+    selectPlacedItem(null); // clicked empty ground — deselect
+  }
+  leftDownTarget = null;
 });
 
 function handleBuildClick(e) {
