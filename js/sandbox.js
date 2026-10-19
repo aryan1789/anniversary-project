@@ -277,6 +277,7 @@ function exitBuildMode() {
   hideGhost();
   document.querySelectorAll('.catalog-item').forEach((b) => b.classList.remove('active'));
   document.getElementById('ai-idea-modal').classList.add('hidden');
+  resetPanelPosition(buildTrayEl.querySelector('.build-panel'));
 }
 const buildClearBtn = document.getElementById('build-clear-btn');
 if (buildClearBtn) {
@@ -733,6 +734,43 @@ function renderChoiceRow(container, options, key) {
   });
 }
 
+// ---- Draggable popups: grab a panel by its header/title and move it
+// anywhere on screen, so it never has to sit wherever it opened if that's
+// in the way. Dragging converts the panel to a fixed left/top position on
+// the fly, regardless of however its CSS normally places it; closing the
+// panel puts that back so it reopens in its default spot next time. ----
+function makePanelDraggable(panelEl, handleEl) {
+  let dragState = null;
+  handleEl.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button')) return;
+    const rect = panelEl.getBoundingClientRect();
+    panelEl.style.position = 'fixed';
+    panelEl.style.left = rect.left + 'px';
+    panelEl.style.top = rect.top + 'px';
+    panelEl.style.right = 'auto';
+    panelEl.style.bottom = 'auto';
+    panelEl.style.margin = '0';
+    dragState = { offX: e.clientX - rect.left, offY: e.clientY - rect.top };
+    handleEl.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  handleEl.addEventListener('pointermove', (e) => {
+    if (!dragState) return;
+    const maxX = window.innerWidth - panelEl.offsetWidth;
+    const maxY = window.innerHeight - panelEl.offsetHeight;
+    panelEl.style.left = Math.max(0, Math.min(maxX, e.clientX - dragState.offX)) + 'px';
+    panelEl.style.top = Math.max(0, Math.min(maxY, e.clientY - dragState.offY)) + 'px';
+  });
+  handleEl.addEventListener('pointerup', () => { dragState = null; });
+  handleEl.addEventListener('pointercancel', () => { dragState = null; });
+}
+function resetPanelPosition(panelEl) {
+  if (!panelEl) return;
+  ['position', 'left', 'top', 'right', 'bottom', 'margin'].forEach((p) => panelEl.style.removeProperty(p));
+}
+makePanelDraggable(document.querySelector('#customize-modal .customize-panel'), document.querySelector('#customize-modal .customize-panel h2'));
+makePanelDraggable(buildTrayEl.querySelector('.build-panel'), buildTrayEl.querySelector('.build-header'));
+
 function openCustomizePanel() {
   const faceContainer = document.getElementById('face-swatches');
   renderColorSwatchRow(document.getElementById('skin-swatches'), SKIN_SWATCHES, 'skinColor', () => renderFaceOptions(faceContainer));
@@ -745,11 +783,14 @@ function openCustomizePanel() {
   renderFaceOptions(faceContainer);
   wasBlockingBeforeOverlay = uiBlocking;
   uiBlocking = true;
+  customizeZoom = true;
   document.getElementById('customize-modal').classList.remove('hidden');
 }
 function closeCustomizePanel() {
   document.getElementById('customize-modal').classList.add('hidden');
   uiBlocking = wasBlockingBeforeOverlay;
+  customizeZoom = false;
+  resetPanelPosition(document.querySelector('#customize-modal .customize-panel'));
 }
 document.getElementById('customize-hud-btn').addEventListener('click', () => {
   if (gameState !== 'playing' || (uiBlocking && !buildModeActive)) return;

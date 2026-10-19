@@ -425,12 +425,16 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
   border-color: var(--green);
   box-shadow: 0 8px 0 #4a9e68;
   pointer-events: auto;
+  background: rgba(255, 248, 238, 0.88);
+  backdrop-filter: blur(3px);
 }
 .build-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
+  cursor: grab;
+  touch-action: none;
 }
 .build-header strong { font-family: 'Baloo 2', 'Trebuchet MS', 'Comic Sans MS', sans-serif; font-size: 1.1rem; }
 .build-hint { font-size: 0.85rem; opacity: 0.75; margin: 4px 0; }
@@ -552,9 +556,19 @@ h1, h2, .chunky-btn, #room-label, .riddle-question, .wax-seal {
 .help-panel .build-hint { margin-bottom: 16px; }
 .help-panel .chunky-btn { display: block; margin: 0 auto; }
 
-/* ---------- Customize panel ---------- */
-.customize-panel { max-width: 460px; max-height: 84vh; overflow-y: auto; text-align: left; }
-.customize-panel h2 { text-align: center; margin: 0 0 16px; }
+/* ---------- Customize panel ----------
+   Docked to one side instead of dead-centered — centering it used to sit
+   right on top of the character, which is exactly what you're trying to
+   look at while picking colors. The backdrop itself is click-through
+   (pointer-events: none) so only the panel blocks anything. */
+#customize-modal {
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 90px 20px 20px;
+  pointer-events: none;
+}
+.customize-panel { max-width: 460px; max-height: 84vh; overflow-y: auto; text-align: left; pointer-events: auto; background: rgba(255, 248, 238, 0.88); backdrop-filter: blur(3px); }
+.customize-panel h2 { text-align: center; margin: 0 0 16px; cursor: grab; touch-action: none; }
 .customize-row { margin-bottom: 14px; }
 .customize-label { font-weight: 700; display: block; margin-bottom: 6px; font-family: 'Baloo 2', 'Trebuchet MS', 'Comic Sans MS', sans-serif; }
 .swatch-row { display: flex; flex-wrap: wrap; gap: 8px; }
