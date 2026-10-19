@@ -20,10 +20,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Heartfelt Delivery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* SOUR-era palette: washed purple/lavender chrome, a grainy Y2K-diary
-       feel instead of a plain beige PC, with a hot-pink accent pop. */
+    /* An Olivia Rodrigo SOUR-inspired skin: washed purple/lavender, grainy
+       Y2K-diary textures, torn-paper "pinned to a corkboard" windows with
+       washi tape, instead of a plain beige Windows-95 PC. */
     --face:#cfc2e8;
     --face-light:#ece3fb;
     --hi:#ffffff;
@@ -33,7 +36,9 @@
     --titlebar-a:#3d1f5c;
     --titlebar-b:#c77edc;
     --accent:#ff4d79;
-    --pixel:"Silkscreen","Courier New",monospace;
+    --card:#faf4ec;
+    --pixel:"Anton","Arial Narrow",sans-serif;
+    --hand:"Caveat","Comic Sans MS",cursive;
     --mono:"Space Mono","Courier New",monospace;
   }
 
@@ -152,9 +157,19 @@
     filter:drop-shadow(1px 1px 0 rgba(0,0,0,.7));
   }
   .icon .label{
-    font-family:var(--pixel);
-    font-size:12px;color:#fff;
+    font-family:var(--hand);
+    font-weight:700;
+    font-size:17px;color:#fff;
     text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  }
+
+  /* a few scattered doodles pinned over the wallpaper, collage-style */
+  .doodle{
+    position:absolute;
+    opacity:.5;
+    pointer-events:none;
+    z-index:2;
+    filter:drop-shadow(1px 1px 0 rgba(0,0,0,.35));
   }
 
   /* ---------------- 3D bevel helpers ---------------- */
@@ -171,42 +186,65 @@
     background:#fff;
   }
 
-  /* ---------------- windows ---------------- */
+  /* ---------------- windows: taped-up zine cards, not OS chrome ---------------- */
   .win{
     position:absolute;
     width:min(360px,88vw);
     padding:3px;
     display:flex;flex-direction:column;
     z-index:10;
-    transform:scale(.92);
+    transform:scale(.92) rotate(var(--tilt, 0deg));
     opacity:0;
     pointer-events:none;
     transition:transform .18s cubic-bezier(.2,.8,.3,1.2), opacity .16s ease;
   }
   .win.open{
-    transform:scale(1);
+    transform:scale(1) rotate(var(--tilt, 0deg));
     opacity:1;
     pointer-events:auto;
   }
+  .win::before{
+    content:"";
+    position:absolute;
+    top:-11px; left:22px;
+    width:48px; height:22px;
+    background:var(--tape, #ffb3d1);
+    opacity:.88;
+    transform:rotate(-4deg);
+    box-shadow:0 2px 2px rgba(0,0,0,.3);
+    z-index:2;
+  }
+  .win.bevel-out{
+    border:2.5px solid var(--ink);
+    border-radius:10px;
+    background:var(--card);
+    box-shadow:5px 7px 0 rgba(0,0,0,.4);
+  }
   .win .titlebar{
-    background:linear-gradient(90deg, var(--titlebar-a), var(--titlebar-b));
+    background:var(--titlebar-a);
     color:#fff;
     display:flex;align-items:center;justify-content:space-between;
-    padding:4px 4px 4px 8px;
+    padding:6px 6px 6px 12px;
     font-family:var(--pixel);
-    font-size:13px;
-    letter-spacing:.02em;
+    font-size:15px;
+    letter-spacing:.03em;
+    text-transform:lowercase;
     touch-action:none;
-    margin-bottom:2px;
+    margin-bottom:0;
+    border-radius:7px 7px 0 0;
   }
-  .win .titlebar .btns{display:flex;gap:3px;}
-  .win .titlebar button{
-    width:18px;height:16px;
+  .win .titlebar .btns{display:flex;gap:5px;}
+  .win .titlebar button.bevel-out{
+    width:20px;height:20px;
+    border-radius:50%;
     font-size:11px;line-height:1;
     padding:0;
-    color:#000;
+    color:var(--ink);
+    background:#fff;
+    border:2px solid var(--ink);
+    box-shadow:none;
   }
-  .win .body{padding:12px;font-size:13.5px;line-height:1.55;background:var(--face);}
+  .win .body{padding:14px;font-size:13.5px;line-height:1.55;background:var(--card);border-radius:0 0 7px 7px;}
 
   /* mail */
   .lock-row{display:flex;gap:6px;}
@@ -265,47 +303,54 @@
 
   /* weblox */
   .win-weblox{width:min(820px,94vw);}
-  .win-weblox .body{padding:0;background:#000;}
+  .win-weblox .body{padding:0;background:#000;overflow:hidden;border-radius:0 0 7px 7px;}
   .weblox-frame{width:100%;height:min(600px,72vh);border:0;display:block;background:#1b1642;}
 
-  /* taskbar */
+  /* taskbar: a dark cassette-strip instead of a beige OS bar */
   .taskbar{
     position:fixed;left:0;right:0;bottom:0;
-    height:38px;
+    height:40px;
     display:flex;align-items:center;gap:6px;
-    padding-inline:4px;
+    padding-inline:6px;
     z-index:50;
-    border-width:1px 0 0 0;
-    border-style:solid;border-color:var(--hi);
-    box-shadow: inset 0 1px 0 var(--face-light);
-    background:var(--face);
+    border:none;
+    background:linear-gradient(180deg, #241338, #170a22);
+    box-shadow: inset 0 3px 0 var(--accent);
+  }
+  .taskbar::before{
+    content:"";
+    position:absolute;top:0;left:0;right:0;height:3px;
+    background-image:repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 7px, transparent 7px 16px);
   }
   #start-btn{
-    font-family:var(--pixel);font-size:13px;font-weight:bold;
-    display:flex;align-items:center;gap:6px;padding:5px 10px;height:30px;
+    font-family:var(--pixel);font-size:13px;font-weight:bold;letter-spacing:.02em;
+    display:flex;align-items:center;gap:7px;padding:5px 14px;height:30px;
+    background:var(--accent);color:#fff;
+    border:2px solid var(--ink);border-radius:18px;
+    box-shadow:2px 3px 0 var(--ink);
+    text-transform:lowercase;
   }
-  #start-btn .grid{
-    display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;
-    width:14px;height:14px;gap:1px;
-  }
-  #start-btn .grid span:nth-child(1){background:#e33;}
-  #start-btn .grid span:nth-child(2){background:#3a3;}
-  #start-btn .grid span:nth-child(3){background:#36e;}
-  #start-btn .grid span:nth-child(4){background:#ec3;}
-  .taskbar-sep{width:2px;height:26px;border-left:1px solid var(--lo);border-right:1px solid var(--hi);}
-  .taskbar-btns{flex:1;display:flex;gap:4px;overflow-x:auto;min-width:0;}
+  #start-btn:active{ box-shadow:0 0 0 var(--ink); transform:translate(2px,3px); }
+  #start-btn svg{width:16px;height:16px;flex:none;}
+  .taskbar-sep{width:1px;height:24px;background:rgba(255,255,255,.2);}
+  .taskbar-btns{flex:1;display:flex;gap:6px;overflow-x:auto;min-width:0;}
   .taskbar-btn{
-    font-family:var(--pixel);font-size:11.5px;
-    padding:5px 10px;height:30px;flex:none;
+    font-family:var(--pixel);font-size:12px;letter-spacing:.02em;text-transform:lowercase;
+    padding:5px 12px;height:30px;flex:none;
     max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    background:rgba(255,255,255,.08);color:#fff;
+    border:1.5px solid rgba(255,255,255,.3);border-radius:14px;
+    box-shadow:none;
   }
   .taskbar-btn.active{
-    border-color:var(--lo-2) var(--hi) var(--hi) var(--lo-2);
-    box-shadow: inset 1px 1px 0 var(--lo), inset -1px -1px 0 var(--face-light), inset 0 -2px 0 var(--accent);
+    background:rgba(255,255,255,.18);
+    border-color:var(--accent);
+    box-shadow:inset 0 -2px 0 var(--accent);
   }
   .clock{
     font-family:var(--mono);font-size:12px;padding:6px 10px;height:30px;
     display:flex;align-items:center;font-variant-numeric:tabular-nums;flex:none;
+    color:#fff;background:transparent;border:none;box-shadow:none;
   }
 
   /* trash toast */
@@ -376,7 +421,11 @@
     </button>
   </div>
 
-  <section class="win bevel-out" id="win-mail" style="top:8%; left:10%;" data-title="mail.exe">
+  <svg class="doodle" style="top:4%; right:12%; width:40px; transform:rotate(12deg);" viewBox="0 0 24 24" fill="none"><path d="M12 20c-4-3-9-6.5-9-11A5 5 0 0 1 12 6a5 5 0 0 1 9 3c0 4.5-5 8-9 11Z" stroke="#fff" stroke-width="1.6"/></svg>
+  <svg class="doodle" style="top:48%; right:6%; width:30px; transform:rotate(-10deg);" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.2 6.8H21l-5.6 4.1 2.1 6.8L12 15.8 6.5 19.7l2.1-6.8L3 8.8h6.8Z" stroke="#fff" stroke-width="1.5"/></svg>
+  <svg class="doodle" style="bottom:16%; left:46%; width:46px; transform:rotate(4deg);" viewBox="0 0 60 16" fill="none"><path d="M2 10 Q10 2 18 10 T34 10 T50 10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+
+  <section class="win bevel-out" id="win-mail" style="top:8%; left:10%; --tilt:-1.6deg; --tape:#ffb3d1;" data-title="mail.exe">
     <div class="titlebar"><span>mail.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
     <div class="body bevel-in">
       <div id="mail-lock">
@@ -399,7 +448,7 @@
     </div>
   </section>
 
-  <section class="win bevel-out" id="win-music" style="top:26%; left:6%;" data-title="music.exe">
+  <section class="win bevel-out" id="win-music" style="top:26%; left:6%; --tilt:1.2deg; --tape:#ffd166;" data-title="music.exe">
     <div class="titlebar"><span>music.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
     <div class="body">
       <div class="player-title" id="song-title">—</div>
@@ -414,7 +463,7 @@
     </div>
   </section>
 
-  <section class="win bevel-out" id="win-photos" style="top:12%; left:18%;" data-title="photos.exe">
+  <section class="win bevel-out" id="win-photos" style="top:12%; left:18%; --tilt:-0.8deg; --tape:#b892e8;" data-title="photos.exe">
     <div class="titlebar"><span>photos.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
     <div class="body">
       <div class="photo-frame bevel-in"><img id="photo-img" alt=""></div>
@@ -427,7 +476,7 @@
     </div>
   </section>
 
-  <section class="win bevel-out win-weblox" id="win-weblox" style="top:6%; left:24%;" data-title="weblox.exe">
+  <section class="win bevel-out win-weblox" id="win-weblox" style="top:6%; left:24%; --tilt:0.6deg; --tape:#6bcf8f;" data-title="weblox.exe">
     <div class="titlebar"><span>weblox.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
     <div class="body">
       <iframe class="weblox-frame" src="weblox/index.html" title="WEblox"></iframe>
@@ -437,9 +486,9 @@
   <div id="toast"></div>
 
   <div class="taskbar">
-    <button id="start-btn" class="bevel-out">
-      <span class="grid"><span></span><span></span><span></span><span></span></span>
-      Start
+    <button id="start-btn">
+      <svg viewBox="0 0 32 20" fill="none"><rect x="1" y="1" width="30" height="18" rx="2" fill="#1d1130" stroke="#fff" stroke-width="1.4"/><circle cx="10" cy="10" r="4.5" fill="none" stroke="#fff" stroke-width="1.4"/><circle cx="22" cy="10" r="4.5" fill="none" stroke="#fff" stroke-width="1.4"/><circle cx="10" cy="10" r="1.3" fill="#fff"/><circle cx="22" cy="10" r="1.3" fill="#fff"/></svg>
+      mixtape
     </button>
     <div class="taskbar-sep"></div>
     <div class="taskbar-btns" id="taskbar-btns"></div>
