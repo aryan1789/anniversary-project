@@ -2,9 +2,10 @@
   HEARTFELT DELIVERY — desktop app version
   ==========================================
   1. HER_NAME, MAIL_PASSWORD, LETTER — near the top of the <script>.
-  2. SONG — drop an instrumental file into assets/song.mp3 and set
-     SONG.url below to "assets/song.mp3". Until then the Music window
-     shows a "waiting for track" state instead of a broken player.
+  2. SONG — drop an instrumental file into assets/song.mp3 (same
+     filename, nothing else to edit). The player auto-detects it; until
+     it's there the Music window shows a "waiting for track" state
+     instead of a broken player.
   3. PHOTOS — one object per photo: { url, caption }. url points at a
      file in assets/photos/. Add more by dropping a file in and copying
      a block below.
@@ -283,14 +284,30 @@
   }
 
   /* music */
-  .player-title{font-family:var(--pixel);font-size:13px;margin-bottom:2px;}
-  .player-artist{font-size:12px;color:var(--lo-2);margin-bottom:12px;}
+  .player-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .cassette-icon{color:var(--lo-2);flex:none;line-height:0;}
+  .cassette-icon .reel{transform-origin:center;transform-box:fill-box;}
+  .cassette-icon.spinning .reel{animation:reel-spin 1.8s linear infinite;}
+  @keyframes reel-spin{to{transform:rotate(360deg);}}
+  .player-meta{min-width:0;}
+  .player-title{font-family:var(--pixel);font-size:13px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .player-artist{font-size:12px;color:var(--lo-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .player-row{display:flex;align-items:center;gap:10px;}
+  .player-row-secondary{margin-top:10px;justify-content:flex-start;}
   .play-btn{width:34px;height:30px;flex:none;font-size:13px;}
   .play-btn:disabled{opacity:.4;}
-  .scrub{flex:1;height:10px;position:relative;overflow:hidden;padding:0;}
-  .scrub .fill{position:absolute;inset:0;width:0%;background:var(--titlebar-b);}
-  .player-time{font-size:11px;color:var(--lo-2);font-variant-numeric:tabular-nums;}
+  .scrub{flex:1;height:10px;position:relative;overflow:visible;padding:0;cursor:pointer;touch-action:none;}
+  .scrub .fill{position:absolute;inset:0;width:0%;background:var(--titlebar-b);pointer-events:none;}
+  .scrub-handle{
+    position:absolute;top:50%;left:0%;width:11px;height:11px;border-radius:50%;
+    background:var(--accent);border:2px solid var(--ink);
+    transform:translate(-50%,-50%);pointer-events:none;
+  }
+  .player-time{font-size:11px;color:var(--lo-2);font-variant-numeric:tabular-nums;margin-right:auto;}
+  .mini-btn{width:26px;height:22px;font-size:12px;padding:0;flex:none;}
+  .mini-btn.active{background:var(--titlebar-b);color:#fff;}
+  .vol-icon{font-size:12px;flex:none;cursor:pointer;}
+  .vol-slider{width:58px;accent-color:var(--titlebar-b);flex:none;}
   .player-waiting{margin-top:10px;font-size:11.5px;color:var(--lo-2);}
 
   /* photos */
@@ -451,15 +468,36 @@
   <section class="win bevel-out" id="win-music" style="top:26%; left:6%; --tilt:1.2deg; --tape:#ffd166;" data-title="music.exe">
     <div class="titlebar"><span>music.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
     <div class="body">
-      <div class="player-title" id="song-title">—</div>
-      <div class="player-artist" id="song-artist">—</div>
+      <div class="player-head">
+        <div class="cassette-icon" id="cassette-icon">
+          <svg viewBox="0 0 48 30" width="38" height="24">
+            <rect x="1" y="1" width="46" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle class="reel" cx="14" cy="15" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle class="reel" cx="34" cy="15" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="14" cy="15" r="1.3" fill="currentColor"/>
+            <circle cx="34" cy="15" r="1.3" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="player-meta">
+          <div class="player-title" id="song-title">—</div>
+          <div class="player-artist" id="song-artist">—</div>
+        </div>
+      </div>
       <div class="player-row">
         <button class="play-btn bevel-out" id="play-btn">&#9654;</button>
-        <div class="scrub bevel-in"><div class="fill" id="scrub-fill"></div></div>
-        <div class="player-time" id="song-time">0:00</div>
+        <div class="scrub bevel-in" id="scrub">
+          <div class="fill" id="scrub-fill"></div>
+          <div class="scrub-handle" id="scrub-handle"></div>
+        </div>
       </div>
-      <div class="player-waiting" id="song-waiting" hidden>waiting for the track — drop it in and it'll play here</div>
-      <audio id="audio-el" preload="none"></audio>
+      <div class="player-row player-row-secondary">
+        <span class="player-time" id="song-time">0:00 / 0:00</span>
+        <button class="mini-btn bevel-out" id="loop-btn" title="Repeat">&#8635;</button>
+        <span class="vol-icon" id="vol-icon" title="Mute">&#128266;</span>
+        <input type="range" id="vol-slider" class="vol-slider" min="0" max="100" value="70" title="Volume">
+      </div>
+      <div class="player-waiting" id="song-waiting" hidden>waiting for the track — drop it into assets/song.mp3 and it'll start playing here, no code changes needed</div>
+      <audio id="audio-el" preload="metadata"></audio>
     </div>
   </section>
 
@@ -515,7 +553,10 @@
   var SONG = {
     title: "The Cut That Always Bleeds (Instrumental)",
     artist: "Conan Gray",
-    url: "" // set to "assets/song.mp3" once the file is in place
+    // The player auto-detects whether this file actually exists (see the
+    // music section below) — just drop the file in at this exact path,
+    // no code edit needed once it's there.
+    url: "assets/song.mp3"
   };
 
   var WALLPAPER_URL = "assets/photos/10-lookout.jpg";
@@ -673,20 +714,70 @@
   // music (defined first so mail can trigger it)
   var audio = document.getElementById("audio-el");
   var playBtn = document.getElementById("play-btn");
+  var scrubEl = document.getElementById("scrub");
+  var scrubFillEl = document.getElementById("scrub-fill");
+  var scrubHandleEl = document.getElementById("scrub-handle");
+  var songTimeEl = document.getElementById("song-time");
+  var songWaitingEl = document.getElementById("song-waiting");
+  var cassetteIconEl = document.getElementById("cassette-icon");
+  var loopBtn = document.getElementById("loop-btn");
+  var volSlider = document.getElementById("vol-slider");
+  var volIconEl = document.getElementById("vol-icon");
+
   document.getElementById("song-title").textContent = SONG.title;
   document.getElementById("song-artist").textContent = SONG.artist;
-  if (SONG.url) {
-    audio.src = SONG.url;
-  } else {
-    playBtn.disabled = true;
-    document.getElementById("song-waiting").hidden = false;
-  }
+
+  // The track is auto-detected: point SONG.url at the file and the player
+  // figures out on its own whether it's actually there, instead of needing
+  // that flag flipped by hand once the file shows up.
+  var trackReady = false;
+  audio.loop = true;
+  loopBtn.classList.add("active");
+  audio.volume = Number(volSlider.value) / 100;
+
+  function trackMissing(){ trackReady = false; playBtn.disabled = true; songWaitingEl.hidden = false; }
+  function trackFound(){ trackReady = true; playBtn.disabled = false; songWaitingEl.hidden = true; }
+  audio.addEventListener("error", trackMissing);
+  audio.addEventListener("loadedmetadata", trackFound);
+  if (SONG.url) { audio.src = SONG.url; audio.load(); } else { trackMissing(); }
+
   function setPlaying(playing){
-    if (!SONG.url) return;
-    if (playing) { audio.play(); playBtn.innerHTML = "&#10074;&#10074;"; }
-    else { audio.pause(); playBtn.innerHTML = "&#9654;"; }
+    if (!trackReady) return;
+    if (playing) { audio.play(); playBtn.innerHTML = "&#10074;&#10074;"; cassetteIconEl.classList.add("spinning"); }
+    else { audio.pause(); playBtn.innerHTML = "&#9654;"; cassetteIconEl.classList.remove("spinning"); }
   }
   playBtn.addEventListener("click", function(){ setPlaying(audio.paused); });
+
+  loopBtn.addEventListener("click", function(){
+    audio.loop = !audio.loop;
+    loopBtn.classList.toggle("active", audio.loop);
+  });
+
+  function updateVolIcon(){
+    var v = audio.muted ? 0 : audio.volume;
+    volIconEl.textContent = v === 0 ? "🔇" : v < 0.5 ? "🔉" : "🔊";
+  }
+  volSlider.addEventListener("input", function(){
+    audio.muted = false;
+    audio.volume = Number(volSlider.value) / 100;
+    updateVolIcon();
+  });
+  volIconEl.addEventListener("click", function(){
+    audio.muted = !audio.muted;
+    updateVolIcon();
+  });
+  updateVolIcon();
+
+  function seekFromEvent(e){
+    if (!trackReady || !audio.duration) return;
+    var rect = scrubEl.getBoundingClientRect();
+    var pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = pct * audio.duration;
+  }
+  var scrubbing = false;
+  scrubEl.addEventListener("pointerdown", function(e){ scrubbing = true; seekFromEvent(e); });
+  window.addEventListener("pointermove", function(e){ if (scrubbing) seekFromEvent(e); });
+  window.addEventListener("pointerup", function(){ scrubbing = false; });
 
   // mail: password -> montage -> letter
   document.getElementById("mail-unlock").addEventListener("click", unlockMail);
@@ -790,15 +881,20 @@
     finishMontage();
   });
 
+  function fmtTime(s){
+    if (!isFinite(s) || s < 0) s = 0;
+    return Math.floor(s / 60) + ":" + pad(Math.floor(s % 60));
+  }
   audio.addEventListener("timeupdate", function(){
     if (!audio.duration) return;
     var pct = (audio.currentTime / audio.duration) * 100;
-    document.getElementById("scrub-fill").style.width = pct + "%";
-    var mins = Math.floor(audio.currentTime / 60);
-    var secs = Math.floor(audio.currentTime % 60);
-    document.getElementById("song-time").textContent = mins + ":" + pad(secs);
+    scrubFillEl.style.width = pct + "%";
+    scrubHandleEl.style.left = pct + "%";
+    songTimeEl.textContent = fmtTime(audio.currentTime) + " / " + fmtTime(audio.duration);
   });
-  audio.addEventListener("ended", function(){ playBtn.innerHTML = "&#9654;"; });
+  audio.addEventListener("ended", function(){
+    if (!audio.loop) { playBtn.innerHTML = "&#9654;"; cassetteIconEl.classList.remove("spinning"); }
+  });
 
   // photos
   var photoIdx = 0;
