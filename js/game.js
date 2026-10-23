@@ -996,11 +996,18 @@ function showMemoryCard(title, text, onDone) {
 const milestonePopupEl = document.getElementById('milestone-popup');
 const milestonePopupTitleEl = document.getElementById('milestone-popup-title');
 const milestonePopupTextEl = document.getElementById('milestone-popup-text');
+const milestonePopupImageEl = document.getElementById('milestone-popup-image');
 let milestonePopupTimer = null;
 
-function showMilestonePopup(title, text) {
+function showMilestonePopup(title, text, image) {
   milestonePopupTitleEl.textContent = title;
   milestonePopupTextEl.textContent = text;
+  if (image) {
+    milestonePopupImageEl.src = image;
+    milestonePopupImageEl.classList.remove('hidden');
+  } else {
+    milestonePopupImageEl.classList.add('hidden');
+  }
   milestonePopupEl.classList.remove('hidden');
   clearTimeout(milestonePopupTimer);
   milestonePopupTimer = setTimeout(() => milestonePopupEl.classList.add('hidden'), 3200);
@@ -1541,7 +1548,7 @@ function buildRoom3() {
       collected++;
       if (audioCtx) sfxPickup();
       scn.remove(orb.group);
-      showMilestonePopup(orb.milestone.title, orb.milestone.text);
+      showMilestonePopup(orb.milestone.title, orb.milestone.text, orb.milestone.image);
       milestoneCounterEl.textContent = `Memories: ${collected}/${orbMeshes.length}`;
       if (collected >= orbMeshes.length) {
         currentRoom.portal.locked = false;

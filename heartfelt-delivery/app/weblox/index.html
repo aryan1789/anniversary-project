@@ -5,8 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HAPPY 1YR BABY</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-size='26' text-anchor='middle'%3E%E2%9D%A4%EF%B8%8F%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* self-hosted fonts so the game works with no internet connection */
+  @font-face { font-family:"Baloo 2"; font-style:normal; font-weight:500; font-display:swap; src:url("js/vendor/fonts/baloo2.woff2") format("woff2"); }
+  @font-face { font-family:"Baloo 2"; font-style:normal; font-weight:700; font-display:swap; src:url("js/vendor/fonts/baloo2.woff2") format("woff2"); }
+  @font-face { font-family:"Baloo 2"; font-style:normal; font-weight:800; font-display:swap; src:url("js/vendor/fonts/baloo2.woff2") format("woff2"); }
+  @font-face { font-family:"Quicksand"; font-style:normal; font-weight:500; font-display:swap; src:url("js/vendor/fonts/quicksand.woff2") format("woff2"); }
+  @font-face { font-family:"Quicksand"; font-style:normal; font-weight:600; font-display:swap; src:url("js/vendor/fonts/quicksand.woff2") format("woff2"); }
+  @font-face { font-family:"Quicksand"; font-style:normal; font-weight:700; font-display:swap; src:url("js/vendor/fonts/quicksand.woff2") format("woff2"); }
+</style>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -192,6 +199,7 @@
 
 <div id="milestone-popup" class="hidden">
   <div class="panel milestone-mini">
+    <img id="milestone-popup-image" class="hidden" alt="">
     <strong id="milestone-popup-title"></strong>
     <p id="milestone-popup-text"></p>
   </div>

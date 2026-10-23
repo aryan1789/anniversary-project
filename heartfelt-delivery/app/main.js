@@ -7,7 +7,7 @@ function createWindow() {
     height: 700,
     minWidth: 640,
     minHeight: 480,
-    title: "Heartfelt Delivery",
+    title: "HAPPY 1YR BABY",
     backgroundColor: "#cfe6ea",
     autoHideMenuBar: true,
     webPreferences: {

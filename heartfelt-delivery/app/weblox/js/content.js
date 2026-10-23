@@ -48,7 +48,7 @@ const GAME_CONTENT = {
       { title: "The Scenic Lookout", text: "We made it all the way up to the lookout together. The view was amazing, but I was way more interested in the person next to me." },
       { title: "Crab Headbands", text: "Two crabs squeezed into one tiny photobooth. Those photos are some of my favourite things I own." },
       { title: "Movie Night: Toppers", text: "We watched Toppers together. Honestly, any movie is better when I'm watching it with you." },
-      { title: "The Sea Turtle", text: "At the maritime museum we stuck our faces through the sea turtle cutout. Easily the cutest turtle in the whole museum." },
+      { title: "The Sea Turtle", text: "At the maritime museum we stuck our faces through the sea turtle cutout. Easily the cutest turtle in the whole museum.", image: "assets/photos/01-turtle.jpg" },
     ],
   },
 

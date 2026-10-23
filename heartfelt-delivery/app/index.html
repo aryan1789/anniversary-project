@@ -22,8 +22,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Heartfelt Delivery</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* self-hosted fonts so the app works with no internet connection */
+  @font-face { font-family:"Anton"; font-style:normal; font-weight:400; font-display:swap; src:url("assets/fonts/anton-400.woff2") format("woff2"); }
+  @font-face { font-family:"Caveat"; font-style:normal; font-weight:600; font-display:swap; src:url("assets/fonts/caveat-600.woff2") format("woff2"); }
+  @font-face { font-family:"Caveat"; font-style:normal; font-weight:700; font-display:swap; src:url("assets/fonts/caveat-600.woff2") format("woff2"); }
+  @font-face { font-family:"Space Mono"; font-style:normal; font-weight:400; font-display:swap; src:url("assets/fonts/spacemono-400.woff2") format("woff2"); }
+  @font-face { font-family:"Space Mono"; font-style:normal; font-weight:700; font-display:swap; src:url("assets/fonts/spacemono-700.woff2") format("woff2"); }
+</style>
 <style>
   :root{
     /* An Olivia Rodrigo SOUR-inspired skin: washed purple/lavender, grainy
@@ -572,12 +578,12 @@
   var MONTAGE = [
     { type: "photo", url: "assets/photos/01-turtle.jpg", duration: 2200 },
     { type: "photo", url: "assets/photos/02-restaurant.jpg", duration: 2200 },
-    { type: "photo", url: "assets/photos/03-cheek-kiss.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/03-cheek-kiss.jpg", duration: 2200, position: "85% 10%" },
     { type: "photo", url: "assets/photos/04-photobooth.jpg", duration: 2200 },
     { type: "photo", url: "assets/photos/05-icecream.jpg", duration: 2200 },
     { type: "photo", url: "assets/photos/06-cinema.jpg", duration: 2200 },
-    { type: "photo", url: "assets/photos/07-goofy.jpg", duration: 2200 },
-    { type: "photo", url: "assets/photos/08-aquarium.jpg", duration: 2200 },
+    { type: "photo", url: "assets/photos/07-goofy.jpg", duration: 2200, fit: "contain", anchor: "left" },
+    { type: "photo", url: "assets/photos/08-aquarium.jpg", duration: 2200, fit: "contain", anchor: "left" },
     { type: "photo", url: "assets/photos/09-donkey.jpg", duration: 2200 },
     { type: "photo", url: "assets/photos/10-lookout.jpg", duration: 2200 },
     { type: "photo", url: "assets/photos/11-river.jpg", duration: 2200 }
@@ -899,6 +905,13 @@
       vidEl.onended = function(){ playMontageItem(i + 1); };
     } else {
       vidEl.hidden = true; imgEl.hidden = false;
+      // per-photo framing: default is a centered cover-crop with the zoom
+      // growing from the middle; some photos need a different crop (to
+      // keep a face in frame) or need to show the whole photo and only
+      // crop one side once the zoom pushes past 100%
+      imgEl.style.objectFit = item.fit || "cover";
+      imgEl.style.objectPosition = item.position || "50% 50%";
+      imgEl.style.transformOrigin = item.anchor === "left" ? "0% 50%" : item.anchor === "right" ? "100% 50%" : "50% 50%";
       imgEl.onload = function(){
         imgEl.classList.add("show","kb");
         var dur = item.duration || 2200;
