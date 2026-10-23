@@ -42,7 +42,7 @@
   <div class="panel emote-panel">
     <div class="build-header">
       <strong>💃 Emotes</strong>
-      <button id="emote-exit-btn" class="chunky-btn small secondary">Close</button>
+      <button id="emote-exit-btn" class="win-close-x" title="Close">&times;</button>
     </div>
     <div class="emote-buttons">
       <button class="emote-btn" data-emote="wave"><span class="emote-icon">👋</span><span>Wave</span></button>
@@ -56,17 +56,16 @@
   <div class="panel build-panel">
     <div class="build-header">
       <strong>🛠️ Build Mode</strong>
-      <button id="build-exit-btn" class="chunky-btn small secondary">Done</button>
+      <button id="build-exit-btn" class="win-close-x" title="Close">&times;</button>
     </div>
-    <p class="build-hint">Click an item below, then click the ground to place it — scroll your mouse wheel to rotate it first. You can click anything you've placed, anytime (even outside Build Mode), to move, rotate or delete it.</p>
     <div id="build-catalog" class="build-catalog"></div>
     <div class="build-options-row">
       <div class="build-options-col">
-        <p class="build-hint">Color (optional):</p>
+        <p class="build-hint">Color</p>
         <div id="build-colors" class="build-colors"></div>
       </div>
       <div class="build-options-col">
-        <p class="build-hint">Size:</p>
+        <p class="build-hint">Size</p>
         <div id="build-scale" class="build-scale"></div>
       </div>
     </div>
@@ -79,6 +78,7 @@
 
 <div id="help-modal" class="overlay hidden">
   <div class="panel help-panel">
+    <button id="help-close-btn" class="win-close-x floating" title="Close">&times;</button>
     <h2>❓ How To Play</h2>
     <div class="help-section">
       <strong>Getting around</strong>
@@ -93,12 +93,12 @@
       <p>🎨 Customize your look · 🛠️ Build mode lets you decorate each room with trees, lights, balloons and more — click a placed item to move, rotate or delete it · 💃 Emotes to wave, dance or cheer · 🔊 Mutes the music and sound.</p>
     </div>
     <p class="build-hint">Your progress and anything you build are saved automatically on this device.</p>
-    <button id="help-close-btn" class="chunky-btn">Got it!</button>
   </div>
 </div>
 
 <div id="customize-modal" class="overlay hidden">
   <div class="panel customize-panel">
+    <button id="customize-done-btn" class="win-close-x floating" title="Close">&times;</button>
     <h2>🎨 Customize You</h2>
     <div class="customize-row">
       <span class="customize-label">Skin</span>
@@ -132,12 +132,12 @@
       <span class="customize-label">Face</span>
       <div class="swatch-row face-swatch-row" id="face-swatches"></div>
     </div>
-    <button id="customize-done-btn" class="chunky-btn">Done</button>
   </div>
 </div>
 
 <div id="ai-idea-modal" class="overlay hidden">
   <div class="panel ai-panel">
+    <button id="ai-close-btn" class="win-close-x floating" title="Close">&times;</button>
     <h2>💡 Ask Claude</h2>
     <div id="ai-key-setup">
       <p class="ai-note">This uses your own Anthropic API key, typed in here and saved only in this browser on this laptop — it's never sent anywhere except Anthropic's servers, and needs an internet connection to work.</p>
@@ -157,7 +157,6 @@
       </div>
       <div id="ai-result"></div>
     </div>
-    <button id="ai-close-btn" class="chunky-btn small secondary">Close</button>
   </div>
 </div>
 

@@ -195,7 +195,6 @@ let selectedCatalogId = null;
 let selectedColor = null;
 let selectedScale = 1;
 let pendingRotation = 0;
-let wasBlockingBeforeOverlay = false;
 
 const buildToggleBtn = document.getElementById('build-toggle-btn');
 const buildTrayEl = document.getElementById('build-tray');
@@ -259,8 +258,24 @@ SCALE_OPTIONS.forEach((opt) => {
   buildScaleEl.appendChild(btn);
 });
 
+// A HUD panel (help / customize / build) blocks the player while open, but
+// clicking a different HUD button should switch straight to it instead of
+// doing nothing — this is what makes that possible.
+function anyHudPanelOpen() {
+  return isHelpOpen() ||
+    !document.getElementById('customize-modal').classList.contains('hidden') ||
+    buildModeActive;
+}
+function closeAllPanels() {
+  if (isHelpOpen()) closeHelpPanel();
+  if (!document.getElementById('customize-modal').classList.contains('hidden')) closeCustomizePanel();
+  if (buildModeActive) exitBuildMode();
+  if (!emoteTrayEl.classList.contains('hidden')) closeEmoteTray();
+  if (!aiModal.classList.contains('hidden')) aiModal.classList.add('hidden');
+}
+
 function enterBuildMode() {
-  if (gameState !== 'playing' || uiBlocking) return;
+  if (gameState !== 'playing') return;
   buildModeActive = true;
   uiBlocking = true;
   buildTrayEl.classList.remove('hidden');
@@ -285,7 +300,13 @@ if (buildClearBtn) {
     if (currentRoom) clearRoomCustomItems(currentRoom.key);
   });
 }
-buildToggleBtn.addEventListener('click', () => { buildModeActive ? exitBuildMode() : enterBuildMode(); });
+buildToggleBtn.addEventListener('click', () => {
+  if (gameState !== 'playing') return;
+  if (buildModeActive) { exitBuildMode(); return; }
+  if (uiBlocking && !anyHudPanelOpen()) return;
+  closeAllPanels();
+  enterBuildMode();
+});
 buildExitBtn.addEventListener('click', exitBuildMode);
 
 // ===================== Emotes =====================
@@ -296,8 +317,11 @@ const emoteExitBtn = document.getElementById('emote-exit-btn');
 
 function closeEmoteTray() { emoteTrayEl.classList.add('hidden'); }
 emoteToggleBtn.addEventListener('click', () => {
-  if (gameState !== 'playing' || uiBlocking) return;
-  emoteTrayEl.classList.toggle('hidden');
+  if (gameState !== 'playing') return;
+  if (!emoteTrayEl.classList.contains('hidden')) { closeEmoteTray(); return; }
+  if (uiBlocking && !anyHudPanelOpen()) return;
+  closeAllPanels();
+  emoteTrayEl.classList.remove('hidden');
 });
 emoteExitBtn.addEventListener('click', closeEmoteTray);
 document.querySelectorAll('.emote-btn').forEach((btn) => {
@@ -781,19 +805,21 @@ function openCustomizePanel() {
   renderChoiceRow(document.getElementById('accessory-swatches'), ACCESSORY_OPTIONS, 'accessory');
   renderColorSwatchRow(document.getElementById('accessory-color-swatches'), ACCESSORY_COLOR_SWATCHES, 'accessoryColor');
   renderFaceOptions(faceContainer);
-  wasBlockingBeforeOverlay = uiBlocking;
   uiBlocking = true;
   customizeZoom = true;
   document.getElementById('customize-modal').classList.remove('hidden');
 }
 function closeCustomizePanel() {
   document.getElementById('customize-modal').classList.add('hidden');
-  uiBlocking = wasBlockingBeforeOverlay;
+  uiBlocking = false;
   customizeZoom = false;
   resetPanelPosition(document.querySelector('#customize-modal .customize-panel'));
 }
 document.getElementById('customize-hud-btn').addEventListener('click', () => {
-  if (gameState !== 'playing' || (uiBlocking && !buildModeActive)) return;
+  if (gameState !== 'playing') return;
+  if (!document.getElementById('customize-modal').classList.contains('hidden')) { closeCustomizePanel(); return; }
+  if (uiBlocking && !anyHudPanelOpen()) return;
+  closeAllPanels();
   openCustomizePanel();
 });
 document.getElementById('customize-done-btn').addEventListener('click', closeCustomizePanel);

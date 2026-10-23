@@ -1776,17 +1776,20 @@ muteToggleBtn.addEventListener('click', () => setAudioMuted(!audioMuted));
 const helpToggleBtn = document.getElementById('help-toggle-btn');
 const helpModalEl = document.getElementById('help-modal');
 const helpCloseBtn = document.getElementById('help-close-btn');
-let helpWasBlocking = false;
+function isHelpOpen() { return !helpModalEl.classList.contains('hidden'); }
+function closeHelpPanel() {
+  helpModalEl.classList.add('hidden');
+  uiBlocking = false;
+}
 helpToggleBtn.addEventListener('click', () => {
-  if (gameState !== 'playing' || (uiBlocking && helpModalEl.classList.contains('hidden'))) return;
-  helpWasBlocking = uiBlocking;
+  if (gameState !== 'playing') return;
+  if (isHelpOpen()) { closeHelpPanel(); return; }
+  if (uiBlocking && !anyHudPanelOpen()) return;
+  closeAllPanels();
   uiBlocking = true;
   helpModalEl.classList.remove('hidden');
 });
-helpCloseBtn.addEventListener('click', () => {
-  helpModalEl.classList.add('hidden');
-  uiBlocking = helpWasBlocking;
-});
+helpCloseBtn.addEventListener('click', closeHelpPanel);
 
 function startGame() {
   hudEl.classList.remove('hidden');
