@@ -485,7 +485,7 @@
     <div class="montage-bars" id="montage-bars"></div>
   </div>
 
-  <section class="win bevel-out" id="win-music" style="top:26%; left:6%; --tilt:1.2deg; --tape:#ffd166;" data-title="music.exe">
+  <section class="win bevel-out" id="win-music" style="bottom:56px; left:16px; --tilt:1.2deg; --tape:#ffd166;" data-title="music.exe">
     <div class="titlebar"><span>music.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
     <div class="body">
       <div class="player-head">
@@ -565,8 +565,11 @@
   // music section below) — drop a file in at the path below and it just
   // works, no other code edit needed.
   var SONGS = [
+    { title: "From the Start", artist: "Laufey", url: "assets/songs/from-the-start.mp3" },
     { title: "honeybee (sped up)", artist: "Olivia Rodrigo", url: "assets/songs/honeybee.mp3" },
-    { title: "the cure", artist: "Olivia Rodrigo", url: "assets/songs/the-cure.mp3" }
+    { title: "Comfort Crowd", artist: "Conan Gray", url: "assets/songs/comfort-crowd.mp3" },
+    { title: "the cure", artist: "Olivia Rodrigo", url: "assets/songs/the-cure.mp3" },
+    { title: "Falling Behind", artist: "Laufey", url: "assets/songs/falling-behind.mp3" }
   ];
 
   var WALLPAPER_URL = "assets/photos/10-lookout.jpg";
@@ -711,6 +714,10 @@
   }
   wins.forEach(makeDraggable);
 
+  // the music player is always open since it's always playing — starts
+  // bottom-left, but she can drag it anywhere
+  openWin(document.getElementById("win-music"));
+
   // start button: just opens photos as a friendly default entry point
   document.getElementById("start-btn").addEventListener("click", function(){
     openWin(document.getElementById("win-photos"));
@@ -741,12 +748,12 @@
   var queueEl = document.getElementById("player-queue");
 
   // A little playlist instead of a single track: next/prev step through
-  // SONGS, loop repeats whichever track is currently playing, and a track
-  // that ends on its own (not looping) rolls into the next one.
+  // SONGS, and by default a track that ends rolls into the next one
+  // rather than repeating itself. Loop can still be turned on to repeat
+  // whichever track is currently playing.
   var trackIdx = 0;
   var trackReady = false;
-  audio.loop = true;
-  loopBtn.classList.add("active");
+  audio.loop = false;
   audio.volume = Number(volSlider.value) / 100;
 
   function trackMissing(){ trackReady = false; playBtn.disabled = true; songWaitingEl.hidden = false; }
@@ -840,17 +847,16 @@
   window.addEventListener("pointerup", function(){ scrubbing = false; });
 
   // the rest of the desktop reveals itself once the opening slideshow
-  // finishes, instead of being there from the start
+  // finishes, instead of being there from the start — and it leads
+  // straight into WEblox, since that's the main event
   function revealDesktop(){
     var lockedIcons = Array.prototype.slice.call(document.querySelectorAll(".icon.locked"));
     lockedIcons.forEach(function(el, i){
       setTimeout(function(){ el.classList.remove("locked"); el.classList.add("revealed"); }, i * 200);
     });
     setTimeout(function(){
-      toast.textContent = "there's more — have a look around ✨";
-      toast.classList.add("show");
-      setTimeout(function(){ toast.classList.remove("show"); }, 2600);
-    }, lockedIcons.length * 200 + 200);
+      openWin(document.getElementById("win-weblox"));
+    }, lockedIcons.length * 200 + 150);
   }
 
   var montageTimer = null;
