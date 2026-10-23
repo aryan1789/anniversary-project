@@ -748,10 +748,9 @@ window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 let cameraYaw = Math.PI;
 let dragging = false, lastX = 0;
 // Toggled from the customize panel (sandbox.js) to swap the normal
-// follow-cam for a close turntable shot of the character, so outfit/hair
+// follow-cam for a fixed close-up facing the character, so outfit/hair
 // changes show up in real time instead of a guess from across the room.
 let customizeZoom = false;
-let customizeSpinYaw = 0;
 canvas.addEventListener('pointerdown', (e) => { dragging = true; lastX = e.clientX; });
 window.addEventListener('pointerup', () => { dragging = false; });
 window.addEventListener('pointermove', (e) => {
@@ -892,10 +891,13 @@ function updatePlayer(dt) {
   }
 
   if (customizeZoom) {
-    customizeSpinYaw += dt * 0.4;
-    const zoomOffset = new THREE.Vector3(Math.sin(customizeSpinYaw) * -4.4, 2.5, Math.cos(customizeSpinYaw) * -4.4);
-    camera.position.lerp(player.position.clone().add(zoomOffset), 0.1);
-    camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1.05, 0)));
+    // Face the camera head-on (not wherever she last walked) and hold a
+    // fixed front-facing shot, shifted left of center so she's fully
+    // visible right next to the Customize You panel instead of behind it.
+    player.rotation.y = Math.PI;
+    const zoomOffset = new THREE.Vector3(0, 2.6, -5.4);
+    camera.position.lerp(player.position.clone().add(zoomOffset), 0.14);
+    camera.lookAt(player.position.clone().add(new THREE.Vector3(-1.7, 1.05, 0)));
   } else {
     const camOffset = new THREE.Vector3(Math.sin(cameraYaw) * -6.5, 4.4 + player.position.y * 0.4, Math.cos(cameraYaw) * -6.5);
     const camTarget = player.position.clone().add(camOffset);
