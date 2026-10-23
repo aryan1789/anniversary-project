@@ -27,17 +27,17 @@ const GAME_CONTENT = {
       "Have a look around, something's hiding somewhere in this room..."
     ],
     memoryTitle: "Nando's & a Cookie Bowl",
-    memoryText: "After being best friends and a whole lot of on and off, we finally got together on Friday the 24th of October. Four days later we had our first proper date at Nando's, then went and got a cookie bowl. It was the perfect start, and it just felt so nice to finally be together.",
+    memoryText: "After being best friends and a whole lot of on and off (SORRYYYY), we finally got together a year ago today. we had our first proper date at Nando's, then went and got a ice cream cookie bowl. It was the perfect start, and it just felt so nice to finally be together.",
   },
 
   // ---- Room 2: The Riddle Garden ----
   room2: {
     name: "The Riddle Garden",
-    riddleIntro: "Two compsci kids became best friends, and look where we ended up. Time for a little test, sweetie.",
-    riddleQuestion: "I'm long and a bit wiggly, you'll find me in a bowl of soup, and I'm the very last word of what you're saved as in my phone. What am I?",
+    riddleIntro: "",
+    riddleQuestion: "I'm long and a bit wiggly, you'll find me in a bowl of soup, and you can see me in the mirror right now. I'm also the very last word of what you're saved as in my phone. What am I?",
     riddleAnswer: "noodle", // lowercase; checked case-insensitively
     riddleHint: "Beautiful... angel... princess... ?",
-    correctResponse: "BAWPPP!! Correct, my beautiful angel princess noodle!",
+    correctResponse: "Correct, my beautiful angel princess noodle!",
   },
 
   // ---- Room 3: Memory Collector ----
@@ -63,11 +63,11 @@ I love youu soooo muchhhhh. You've made the last two years so amazing, first as 
 
 I love how kind you are. I love how much you care, about everyone, but especially about me. That letter you gave me is still one of the cutest things anyone has ever done for me. And I love how patient you are with me, even when I definitely don't make it easy.
 
-You've made me a better person, Riddhi. I really mean that. Being with you makes me want to be kinder and better, because that's what you are every single day.
+You've made me a better person, baby. I really mean that. Being with you makes me want to be kinder and better, because that's what you are every single day.
 
 It's been one year since that first Nando's date and the cookie bowl, and I'd do every single day of it again. I can't wait for all the moments we haven't had yet.
 
-Bloop. That's all, just bloop. I love you.
+BAWPPPPPPPPPP, I LOVE YOU.
 
 Mwahhhhhhh`,
     signOff: "Forever yours, Aryan",

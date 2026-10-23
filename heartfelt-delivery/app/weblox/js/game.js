@@ -1018,6 +1018,7 @@ const riddleFeedbackEl = document.getElementById('riddle-feedback');
 function openRiddle(content, onCorrect) {
   uiBlocking = true;
   riddleIntroEl.textContent = content.riddleIntro;
+  riddleIntroEl.classList.toggle('hidden', !content.riddleIntro);
   riddleQuestionEl.textContent = content.riddleQuestion;
   riddleInputEl.value = '';
   riddleFeedbackEl.textContent = '';
