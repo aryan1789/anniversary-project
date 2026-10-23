@@ -165,25 +165,6 @@
     text-shadow:1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
   }
 
-  /* the rest of the desktop stays tucked away until the opening slideshow
-     finishes, so this feels like something to go through rather than a
-     flat folder of apps */
-  .icon.locked{
-    opacity:0;
-    transform:translateY(10px) scale(.82);
-    pointer-events:none;
-    transition:opacity .55s ease, transform .55s cubic-bezier(.2,.8,.3,1.2);
-  }
-  .icon.revealed{ opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
-  @keyframes icon-pulse-glow{
-    0%,100%{ filter:drop-shadow(1px 1px 0 rgba(0,0,0,.7)) drop-shadow(0 0 0 rgba(224,22,158,0)); }
-    50%{ filter:drop-shadow(1px 1px 0 rgba(0,0,0,.7)) drop-shadow(0 0 9px var(--accent)); }
-  }
-  .icon.pulse .glyph{ animation:icon-pulse-glow 1.9s ease-in-out infinite; }
-  @media (prefers-reduced-motion: reduce){
-    .icon.pulse .glyph{ animation:none; }
-  }
-
   /* a few scattered doodles pinned over the wallpaper, collage-style */
   .doodle{
     position:absolute;
@@ -267,15 +248,21 @@
   }
   .win .body{padding:14px;font-size:13.5px;line-height:1.55;background:var(--card);border-radius:0 0 7px 7px;}
 
-  /* opening slideshow — plays automatically right after boot */
+  /* opening slideshow — a small contained card over the (already loaded
+     and visible) desktop, the same way the old mail window used to show
+     it, not a full black screen blocking everything */
   #intro-slideshow{
-    position:fixed;inset:0;z-index:150;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    gap:14px;background:#000;padding:24px;
+    position:fixed;inset:0;z-index:500;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;background:rgba(20,10,32,.5);
   }
   #intro-slideshow[hidden]{display:none;}
-  #intro-slideshow .montage-frame,
-  #intro-slideshow .montage-bars{width:min(480px,90vw);}
+  .slideshow-card{
+    width:min(360px,88vw);padding:3px;
+    border:2.5px solid var(--ink);border-radius:10px;
+    background:var(--card);box-shadow:5px 7px 0 rgba(0,0,0,.4);
+  }
+  .slideshow-body{padding:14px;}
   .montage{position:relative;}
   .montage-frame{
     width:100%;aspect-ratio:4/3;overflow:hidden;background:#000;
@@ -429,19 +416,19 @@
 
 <div id="desktop">
   <div class="icons">
-    <button class="icon locked" data-open="win-music" data-title="music.exe">
+    <button class="icon" data-open="win-music" data-title="music.exe">
       <span class="glyph">
         <svg viewBox="0 0 32 32"><polygon points="6,13 12,13 18,7 18,25 12,19 6,19" fill="#f4c430" stroke="#000" stroke-width="1.4"/><path d="M21,12 Q25,16 21,20" stroke="#000" stroke-width="1.6" fill="none"/><path d="M24,9 Q30,16 24,23" stroke="#000" stroke-width="1.6" fill="none"/></svg>
       </span>
       <span class="label">Music</span>
     </button>
-    <button class="icon locked" data-open="win-photos" data-title="photos.exe">
+    <button class="icon" data-open="win-photos" data-title="photos.exe">
       <span class="glyph">
         <svg viewBox="0 0 32 32"><rect x="3" y="4" width="26" height="24" fill="#fff" stroke="#000" stroke-width="1.6"/><rect x="6" y="7" width="20" height="17" fill="#7ec8e3" stroke="#000" stroke-width="1"/><circle cx="21" cy="11" r="2.6" fill="#ffd23f" stroke="#000" stroke-width="1"/><polygon points="6,24 13,13 18,19 22,14 26,24" fill="#4a7a4a" stroke="#000" stroke-width="1.2"/></svg>
       </span>
       <span class="label">Photos</span>
     </button>
-    <button class="icon locked" data-open="win-weblox" data-title="weblox.exe">
+    <button class="icon" data-open="win-weblox" data-title="weblox.exe">
       <span class="glyph">
         <svg viewBox="0 0 32 32">
           <polygon points="16,4 28,10 16,16 4,10" fill="#8fd3f4" stroke="#000" stroke-width="1.4"/>
@@ -476,13 +463,17 @@
     </g>
   </svg>
 
-  <div id="intro-slideshow" class="montage" hidden>
-    <div class="montage-frame">
-      <img id="montage-img" class="montage-media" alt="" hidden>
-      <video id="montage-vid" class="montage-media" muted playsinline hidden></video>
-      <button class="bevel-out montage-skip" id="montage-skip">Skip &#9199;</button>
+  <div id="intro-slideshow" hidden>
+    <div class="slideshow-card">
+      <div class="slideshow-body montage">
+        <div class="montage-frame">
+          <img id="montage-img" class="montage-media" alt="" hidden>
+          <video id="montage-vid" class="montage-media" muted playsinline hidden></video>
+          <button class="bevel-out montage-skip" id="montage-skip">Skip &#9199;</button>
+        </div>
+        <div class="montage-bars" id="montage-bars"></div>
+      </div>
     </div>
-    <div class="montage-bars" id="montage-bars"></div>
   </div>
 
   <section class="win bevel-out" id="win-music" style="bottom:56px; left:16px; --tilt:1.2deg; --tape:#ffd166;" data-title="music.exe">
@@ -609,13 +600,10 @@
 
   document.getElementById("desktop").style.setProperty("--wallpaper", "url(" + WALLPAPER_URL + ")");
 
-  // boot screen -> straight into the opening slideshow
+  // boot screen -> straight into the already-loaded, fully clickable desktop
   var boot = document.getElementById("boot");
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  setTimeout(function(){
-    boot.classList.add("hide");
-    startMontage();
-  }, reduceMotion ? 400 : 2200);
+  setTimeout(function(){ boot.classList.add("hide"); }, reduceMotion ? 400 : 2200);
 
   // clock
   function pad(n){ return String(n).padStart(2,"0"); }
@@ -670,8 +658,17 @@
     refreshActiveStyles();
   }
 
+  // WEblox's icon plays the opening slideshow the first time it's
+  // clicked, the same way mail used to lead into it, then opens WEblox
+  // once it finishes; every click after that just opens it directly
+  var slideshowShown = false;
   document.querySelectorAll(".icon[data-open]").forEach(function(btn){
     btn.addEventListener("click", function(){
+      if (btn.dataset.open === "win-weblox" && !slideshowShown) {
+        slideshowShown = true;
+        startMontage();
+        return;
+      }
       openWin(document.getElementById(btn.dataset.open));
     });
   });
@@ -846,19 +843,6 @@
   window.addEventListener("pointermove", function(e){ if (scrubbing) seekFromEvent(e); });
   window.addEventListener("pointerup", function(){ scrubbing = false; });
 
-  // the rest of the desktop reveals itself once the opening slideshow
-  // finishes, instead of being there from the start — and it leads
-  // straight into WEblox, since that's the main event
-  function revealDesktop(){
-    var lockedIcons = Array.prototype.slice.call(document.querySelectorAll(".icon.locked"));
-    lockedIcons.forEach(function(el, i){
-      setTimeout(function(){ el.classList.remove("locked"); el.classList.add("revealed"); }, i * 200);
-    });
-    setTimeout(function(){
-      openWin(document.getElementById("win-weblox"));
-    }, lockedIcons.length * 200 + 150);
-  }
-
   var montageTimer = null;
   function buildMontageBars(){
     var wrap = document.getElementById("montage-bars");
@@ -885,7 +869,7 @@
     });
   }
   function startMontage(){
-    if (!MONTAGE.length) { revealDesktop(); return; }
+    if (!MONTAGE.length) { openWin(document.getElementById("win-weblox")); return; }
     document.getElementById("intro-slideshow").hidden = false;
     buildMontageBars();
     playMontageItem(0);
@@ -926,7 +910,7 @@
   }
   function finishMontage(){
     document.getElementById("intro-slideshow").hidden = true;
-    revealDesktop();
+    openWin(document.getElementById("win-weblox"));
   }
   document.getElementById("montage-skip").addEventListener("click", function(){
     clearTimeout(montageTimer);
