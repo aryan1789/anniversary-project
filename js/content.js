@@ -61,7 +61,7 @@ const GAME_CONTENT = {
 
 I love youu soooo muchhhhh. You've made the last two years so amazing, first as my best friend and then as my girlfriend, and I've had sooo much fun with you through all of it.
 
-I love how kind you are. I love how much you care, about everyone, but especially about me. That letter you gave me is still one of the cutest things anyone has ever done for me. And I love how patient you are with me, even when I definitely don't make it easy.
+I love how kind you are. I love how much you care, about everyone, but especially about me. That letter you gave me is the cutest, bestest things anyone has ever done for me. And I love how patient you are with me, even when I definitely don't make it easy.
 
 You've made me a better person, baby. I really mean that. Being with you makes me want to be kinder and better, because that's what you are every single day.
 
