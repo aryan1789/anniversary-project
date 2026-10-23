@@ -1,13 +1,11 @@
 <!--
   RETRO DESKTOP — edit guide
   ===========================
-  1. HER_NAME, MAIL_PASSWORD, LETTER — near the top of the <script>.
-     Password is case-insensitive and trims whitespace. Nothing on the
-     page shows it — it only lives in this file.
-  2. SONG — once you have an instrumental file, tell Claude and it gets
+  1. SONG — once you have an instrumental file, tell Claude and it gets
      uploaded as an artifact asset and wired into SONG.url. Until then
      the Music window shows a "waiting for track" state instead of a
      broken player.
+  1b. MONTAGE — the opening slideshow that auto-plays right after boot.
   3. PHOTOS — one object per photo: { url, caption }. url is already an
      uploaded artifact asset. caption is the one line under each photo —
      rewrite freely, add more by copying a block.
@@ -169,18 +167,15 @@
   }
   .win .body{padding:12px;font-size:13.5px;line-height:1.55;background:var(--face);}
 
-  /* mail */
-  .lock-row{display:flex;gap:6px;}
-  .lock-row input{
-    flex:1;min-width:0;font-family:var(--mono);font-size:13px;padding:6px 8px;
+  /* opening slideshow — plays automatically right after boot */
+  #intro-slideshow{
+    position:fixed;inset:0;z-index:150;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;background:#000;padding:24px;
   }
-  .lock-row button{font-family:var(--pixel);font-size:12px;padding:6px 12px;}
-  .lock-hint{margin-top:8px;font-size:11.5px;color:var(--lo-2);}
-  .lock-error{margin-top:8px;font-size:11.5px;color:#8b0000;display:none;}
-  .letter{white-space:pre-line;background:#fff;padding:10px;}
-  .letter .sign{margin-top:14px;font-style:italic;}
-
-  /* mail montage */
+  #intro-slideshow[hidden]{display:none;}
+  #intro-slideshow .montage-frame,
+  #intro-slideshow .montage-bars{width:min(480px,90vw);}
   .montage{position:relative;}
   .montage-frame{
     width:100%;aspect-ratio:4/3;overflow:hidden;background:#000;
@@ -299,12 +294,6 @@
 
 <div id="desktop">
   <div class="icons">
-    <button class="icon" data-open="win-mail" data-title="mail.exe">
-      <span class="glyph">
-        <svg viewBox="0 0 32 32"><rect x="3" y="9" width="26" height="17" fill="#f4f1e4" stroke="#000" stroke-width="1.6"/><path d="M3,9 L16,19 L29,9" fill="none" stroke="#000" stroke-width="1.6"/></svg>
-      </span>
-      <span class="label">Mail</span>
-    </button>
     <button class="icon" data-open="win-music" data-title="music.exe">
       <span class="glyph">
         <svg viewBox="0 0 32 32"><polygon points="6,13 12,13 18,7 18,25 12,19 6,19" fill="#f4c430" stroke="#000" stroke-width="1.4"/><path d="M21,12 Q25,16 21,20" stroke="#000" stroke-width="1.6" fill="none"/><path d="M24,9 Q30,16 24,23" stroke="#000" stroke-width="1.6" fill="none"/></svg>
@@ -325,28 +314,14 @@
     </button>
   </div>
 
-  <section class="win bevel-out" id="win-mail" style="top:8%; left:10%;" data-title="mail.exe">
-    <div class="titlebar"><span>mail.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
-    <div class="body bevel-in">
-      <div id="mail-lock">
-        <div class="lock-row">
-          <input type="text" class="bevel-in" id="mail-pass" placeholder="password" autocomplete="off">
-          <button class="bevel-out" id="mail-unlock">Open</button>
-        </div>
-        <div class="lock-hint">hint: think back to the first date</div>
-        <div class="lock-error" id="mail-error">not quite — try again</div>
-      </div>
-      <div id="mail-montage" class="montage" hidden>
-        <div class="montage-frame">
-          <img id="montage-img" class="montage-media" alt="" hidden>
-          <video id="montage-vid" class="montage-media" muted playsinline hidden></video>
-          <button class="bevel-out montage-skip" id="montage-skip">Skip &#9199;</button>
-        </div>
-        <div class="montage-bars" id="montage-bars"></div>
-      </div>
-      <div id="mail-letter" class="letter bevel-in" hidden></div>
+  <div id="intro-slideshow" class="montage" hidden>
+    <div class="montage-frame">
+      <img id="montage-img" class="montage-media" alt="" hidden>
+      <video id="montage-vid" class="montage-media" muted playsinline hidden></video>
+      <button class="bevel-out montage-skip" id="montage-skip">Skip &#9199;</button>
     </div>
-  </section>
+    <div class="montage-bars" id="montage-bars"></div>
+  </div>
 
   <section class="win bevel-out" id="win-music" style="top:26%; left:6%;" data-title="music.exe">
     <div class="titlebar"><span>music.exe</span><span class="btns"><button class="bevel-out" data-close>&#10005;</button></span></div>
@@ -394,17 +369,6 @@
   "use strict";
 
   // ---- edit these ----
-  var HER_NAME = "Riddhi";
-  var MAIL_PASSWORD = "nandos";
-
-  var LETTER =
-    HER_NAME + ",\n\n" +
-    "One year ago I took you to Nando's, not really knowing it'd turn into this.\n\n" +
-    "Since then it's been ice cream that made you scream in the middle of the street, a bear mascot, jellyfish tanks, crab headbands in a photobooth, and you choosing to sit next to me through all of it anyway.\n\n" +
-    "I built you a whole computer for this because a text felt too small for a year like this one. There's more here than just this letter — go look around.\n\n" +
-    "Thank you for a year I'd happily rewatch on a loop.\n\n" +
-    "I love you.";
-
   var SONG = {
     title: "The Cut That Always Bleeds (Instrumental)",
     artist: "Conan Gray",
@@ -413,11 +377,11 @@
 
   var WALLPAPER_URL = "/_blob/8608c2f8287a5198c6aa3fe76479ac11"; // lookout photo
 
-  // Plays automatically after the password is entered, before the letter
-  // shows. Placeholder set to the photos already on hand — replace with
-  // whatever spans the whole relationship once you've compiled it, and
-  // add videos by setting type: "video" (tell Claude the file and it'll
-  // get uploaded as an asset the same way the photos were).
+  // Plays automatically right after the boot screen, before the desktop
+  // is revealed. Placeholder set to the photos already on hand — replace
+  // with whatever spans the whole relationship once you've compiled it,
+  // and add videos by setting type: "video" (tell Claude the file and
+  // it'll get uploaded as an asset the same way the photos were).
   var MONTAGE = [
     { type: "photo", url: "/_blob/0b3c07714e669fc13ec3e0c2d7c71a41", duration: 2200 },
     { type: "photo", url: "/_blob/093b9f3bfd89b79fe03355d1069d17f7", duration: 2200 },
@@ -449,10 +413,13 @@
 
   document.getElementById("desktop").style.setProperty("--wallpaper", "url(" + WALLPAPER_URL + ")");
 
-  // boot screen
+  // boot screen -> straight into the opening slideshow
   var boot = document.getElementById("boot");
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  setTimeout(function(){ boot.classList.add("hide"); }, reduceMotion ? 400 : 2200);
+  setTimeout(function(){
+    boot.classList.add("hide");
+    startMontage();
+  }, reduceMotion ? 400 : 2200);
 
   // clock
   function pad(n){ return String(n).padStart(2,"0"); }
@@ -551,9 +518,9 @@
   }
   wins.forEach(makeDraggable);
 
-  // start button: just opens mail as a friendly default entry point
+  // start button: just opens photos as a friendly default entry point
   document.getElementById("start-btn").addEventListener("click", function(){
-    openWin(document.getElementById("win-mail"));
+    openWin(document.getElementById("win-photos"));
   });
 
   // trash toast
@@ -564,7 +531,7 @@
     setTimeout(function(){ toast.classList.remove("show"); }, 1800);
   });
 
-  // music (defined first so mail can trigger it)
+  // music
   var audio = document.getElementById("audio-el");
   var playBtn = document.getElementById("play-btn");
   document.getElementById("song-title").textContent = SONG.title;
@@ -582,31 +549,29 @@
   }
   playBtn.addEventListener("click", function(){ setPlaying(audio.paused); });
 
-  // mail: password -> montage -> letter
-  document.getElementById("mail-unlock").addEventListener("click", unlockMail);
-  document.getElementById("mail-pass").addEventListener("keydown", function(e){
-    if (e.key === "Enter") unlockMail();
-  });
-  function unlockMail(){
-    var val = document.getElementById("mail-pass").value.trim().toLowerCase();
-    if (val !== MAIL_PASSWORD.trim().toLowerCase()) {
-      document.getElementById("mail-error").style.display = "block";
-      return;
-    }
-    document.getElementById("mail-lock").hidden = true;
-    openWin(document.getElementById("win-music"));
+  // background music starts on the first click or keystroke anywhere
+  // (browsers block audio before that) instead of needing an app opened
+  var ambientStarted = false;
+  function startAmbientMusic(){
+    if (ambientStarted || !SONG.url) return;
+    ambientStarted = true;
     setPlaying(true);
-    startMontage();
   }
+  document.addEventListener("pointerdown", startAmbientMusic, { once: true });
+  document.addEventListener("keydown", startAmbientMusic, { once: true });
 
-  function showLetter(){
-    var letterEl = document.getElementById("mail-letter");
-    letterEl.hidden = false;
-    letterEl.textContent = LETTER;
-    var sign = document.createElement("div");
-    sign.className = "sign";
-    sign.textContent = "— Aryan";
-    letterEl.appendChild(sign);
+  // the rest of the desktop reveals itself once the opening slideshow
+  // finishes, instead of being there from the start
+  function revealDesktop(){
+    var lockedIcons = Array.prototype.slice.call(document.querySelectorAll(".icon.locked"));
+    lockedIcons.forEach(function(el, i){
+      setTimeout(function(){ el.classList.remove("locked"); el.classList.add("revealed"); }, i * 200);
+    });
+    setTimeout(function(){
+      toast.textContent = "there's more — have a look around ✨";
+      toast.classList.add("show");
+      setTimeout(function(){ toast.classList.remove("show"); }, 2600);
+    }, lockedIcons.length * 200 + 200);
   }
 
   var montageTimer = null;
@@ -635,8 +600,8 @@
     });
   }
   function startMontage(){
-    if (!MONTAGE.length) { showLetter(); return; }
-    document.getElementById("mail-montage").hidden = false;
+    if (!MONTAGE.length) { revealDesktop(); return; }
+    document.getElementById("intro-slideshow").hidden = false;
     buildMontageBars();
     playMontageItem(0);
   }
@@ -675,8 +640,8 @@
     }
   }
   function finishMontage(){
-    document.getElementById("mail-montage").hidden = true;
-    showLetter();
+    document.getElementById("intro-slideshow").hidden = true;
+    revealDesktop();
   }
   document.getElementById("montage-skip").addEventListener("click", function(){
     clearTimeout(montageTimer);
@@ -715,8 +680,5 @@
     renderPhoto();
   });
   renderPhoto();
-
-  // open mail by default so the desktop never looks empty at rest
-  openWin(document.getElementById("win-mail"));
 })();
 </script>
