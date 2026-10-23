@@ -11,7 +11,7 @@ const GAME_CONTENT = {
   // ---- Names & basics ----
   playerName: "Aryan",
   girlfriendName: "Riddhi",
-  nickname: "TODO_A_NICKNAME_YOU_CALL_HER", // used in a few lines of dialogue
+  nickname: "Sweetie", // used in a few lines of dialogue
 
   // Character look — pick any hex colors
   characterShirtColor: "#ff6f91",
@@ -22,47 +22,54 @@ const GAME_CONTENT = {
   room1: {
     name: "The Meeting Grounds",
     introDialogue: [
-      "TODO_: Write a short opening line, like how you want to greet her here.",
-      "TODO_: A second line if you'd like — maybe hint she should look around.",
-      "There's something hidden near that rock over there... find it, TODO_NICKNAME."
+      "Hi sweetie, welcome to your anniversary present!",
+      "One whole year of us, and I hid some of my favourite bits of it in here.",
+      "Have a look around, something's hiding somewhere in this room..."
     ],
-    memoryTitle: "TODO_: e.g. How We Met",
-    memoryText: "TODO_: Write the memory of how you met / a milestone that belongs in room 1. A couple of sentences is perfect.",
+    memoryTitle: "Nando's & a Cookie Bowl",
+    memoryText: "After being best friends and a whole lot of on and off, we finally got together on Friday the 24th of October. Four days later we had our first proper date at Nando's, then went and got a cookie bowl. It was the perfect start, and it just felt so nice to finally be together.",
   },
 
   // ---- Room 2: The Riddle Garden ----
   room2: {
     name: "The Riddle Garden",
-    riddleIntro: "TODO_: A line of flavor text from the signpost/NPC before the riddle.",
-    riddleQuestion: "TODO_: Write a riddle here, ideally based on an inside joke only she'd get.",
-    riddleAnswer: "todo_answer", // lowercase; checked case-insensitively
-    riddleHint: "TODO_: An optional hint if she gets stuck.",
-    correctResponse: "TODO_: What the game says when she gets it right.",
+    riddleIntro: "Two compsci kids became best friends, and look where we ended up. Time for a little test, sweetie.",
+    riddleQuestion: "I'm long and a bit wiggly, you'll find me in a bowl of soup, and I'm the very last word of what you're saved as in my phone. What am I?",
+    riddleAnswer: "noodle", // lowercase; checked case-insensitively
+    riddleHint: "Beautiful... angel... princess... ?",
+    correctResponse: "BAWPPP!! Correct, my beautiful angel princess noodle!",
   },
 
   // ---- Room 3: Memory Collector ----
   room3: {
     name: "Memory Collector",
-    introText: "TODO_: A short line explaining she should collect the glowing hearts scattered around.",
+    introText: "Four little moments from our year that I think about all the time.",
     milestones: [
-      { title: "TODO_ Milestone 1", text: "TODO_: describe this memory." },
-      { title: "TODO_ Milestone 2", text: "TODO_: describe this memory." },
-      { title: "TODO_ Milestone 3", text: "TODO_: describe this memory." },
-      { title: "TODO_ Milestone 4", text: "TODO_: describe this memory." },
+      { title: "The Scenic Lookout", text: "We made it all the way up to the lookout together. The view was amazing, but I was way more interested in the person next to me." },
+      { title: "Crab Headbands", text: "Two crabs squeezed into one tiny photobooth. Those photos are some of my favourite things I own." },
+      { title: "Movie Night: Toppers", text: "We watched Toppers together. Honestly, any movie is better when I'm watching it with you." },
+      { title: "The Sea Turtle", text: "At the maritime museum we stuck our faces through the sea turtle cutout. Easily the cutest turtle in the whole museum." },
     ],
   },
 
   // ---- Room 4: The Treasure Room (finale) ----
   finale: {
     chestPrompt: "Open the treasure chest",
-    loveLetterTitle: "TODO_: e.g. My Dearest TODO_HER_NAME,",
+    loveLetterTitle: "Happy One Year, Sweetie",
     loveLetterBody:
-`TODO_: Write your full love letter here.
+`Hi baby,
 
-You can split it into a few paragraphs like this — just
-leave a blank line between them and it'll format nicely.
+I love youu soooo muchhhhh. You've made the last two years so amazing, first as my best friend and then as my girlfriend, and I've had sooo much fun with you through all of it.
 
-This is the big finish, so take your time with it.`,
-    signOff: "TODO_: e.g. Forever yours, TODO_YOUR_NAME",
+I love how kind you are. I love how much you care, about everyone, but especially about me. That letter you gave me is still one of the cutest things anyone has ever done for me. And I love how patient you are with me, even when I definitely don't make it easy.
+
+You've made me a better person, Riddhi. I really mean that. Being with you makes me want to be kinder and better, because that's what you are every single day.
+
+It's been one year since that first Nando's date and the cookie bowl, and I'd do every single day of it again. I can't wait for all the moments we haven't had yet.
+
+Bloop. That's all, just bloop. I love you.
+
+Mwahhhhhhh`,
+    signOff: "Forever yours, Aryan",
   },
 };
